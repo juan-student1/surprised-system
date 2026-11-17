@@ -1,5 +1,5 @@
 """CENTINELA · rutas HTTP (API pública + bot + llamadas reales)."""
-import json, os, re, unicodedata
+import hmac, json, os, re, unicodedata
 from datetime import datetime, timezone
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
@@ -136,7 +136,7 @@ def registrar(app: FastAPI):
     def control(request: Request, accion: str = ""):
         # Lo llama SOLO el gateway (profesor autenticado). Detener = simular caida -> failover al otro nodo.
         token = request.headers.get("x-centinela-control")
-        if not CONTROL_TOKEN or token != CONTROL_TOKEN: raise HTTPException(401, "No autorizado")
+        if not CONTROL_TOKEN or not hmac.compare_digest(token or "", CONTROL_TOKEN): raise HTTPException(401, "No autorizado")
         MANTENIMIENTO["on"] = (accion == "pausar")
         try: evento("mantenimiento" if MANTENIMIENTO["on"] else "reactivado", f"Nodo {NODO} " + ("detenido desde el panel (simulacion de caida)" if MANTENIMIENTO["on"] else "reactivado desde el panel"))
         except Exception: pass
@@ -168,8 +168,9 @@ def registrar(app: FastAPI):
 
     @app.post("/api/llamada")
     def llamada_entrante(l: Llamada, request: Request, bg: BackgroundTasks):
-        token = request.headers.get("x-centinela-token") or request.query_params.get("token")
-        if not LLAMADAS_TOKEN or token != LLAMADAS_TOKEN: raise HTTPException(401, "Token de llamadas inválido")
+        # Preferido: encabezado x-centinela-token (app Android). ?token= se mantiene por compatibilidad con MacroDroid/Atajos.
+        token = request.headers.get("x-centinela-token") or request.query_params.get("token") or ""
+        if not LLAMADAS_TOKEN or not hmac.compare_digest(token, LLAMADAS_TOKEN): raise HTTPException(401, "Token de llamadas inválido")
         if len(re.sub(r"\D", "", l.numero)) < 3:
             f = {"numero": None, "nivel": "medio", "score": 40, "pais": "Oculto", "total_reportes": 0}
             aviso = "📞 Llamada de número oculto o privado.\n🟠 No se puede verificar: si contestas, no des datos."
@@ -192,7 +193,7 @@ def registrar(app: FastAPI):
         return {"ok": True, "nodo": NODO, "numero": f["numero"], "nivel": f.get("nivel"), "score": f.get("score"), "notificacion": f"{corto} ({f.get('score')}/100)"}
 
     @app.get("/api/llamadas")
-    def llamadas(limite: int = 5):
+    def llamadas(request: Request, limite: int = 5):
         limite = max(1, min(limite, 20))
         try: filas = q("""select l.id, l.numero, l.dispositivo, l.score, l.nivel, l.nodo, l.creado, n.pais, n.total_reportes, n.categoria_principal, n.resumen_ia from llamadas l left join numeros n using (numero) order by l.creado desc limit %s""", (limite,), todos=True)
         except Exception as e: log.warning("Llamadas sin BD, uso las locales: %s", e); filas = []
@@ -203,9 +204,12 @@ def registrar(app: FastAPI):
                     filas.append({**json.loads(r["data"]), "id": f"{NODO}-{r['id']}", "creado": datetime.fromisoformat(r["creado"])})
         except Exception as e: log.warning("No pude leer llamadas locales: %s", e)
         filas = sorted(filas, key=lambda f: f["creado"], reverse=True)[:limite]
+        # Privacidad: al público el número SIEMPRE enmascarado y sin el dispositivo; completo solo con el token del celular
+        completo = bool(LLAMADAS_TOKEN) and hmac.compare_digest(request.headers.get("x-centinela-token") or "", LLAMADAS_TOKEN)
         for f in filas:
             if not f["numero"]: f["numero"] = "Número oculto"
-            elif (f["score"] or 0) < 25 and not f["total_reportes"]: f["numero"] = enmascarar(f["numero"])
+            elif not completo: f["numero"] = enmascarar(f["numero"])
+            if not completo: f.pop("dispositivo", None)
             f["segundos"] = int((datetime.now(timezone.utc) - f["creado"]).total_seconds())
         return filas
 

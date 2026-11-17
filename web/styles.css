@@ -69,7 +69,17 @@ h3 { font-size: 18px; font-weight: 700; }
 .marca svg { width: 28px; height: 28px; }
 .marca svg path { fill: var(--cobalto); }
 .marca svg .check { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.menu { display: flex; gap: 20px; margin-left: auto; }
+/* Menú: en escritorio va en línea; en celular es un popover nativo (mismo <nav> en todos los tamaños) */
+.menu-nav { margin-left: auto; }
+.menu-btn { display: none; cursor: pointer; background: var(--superficie); border: 1px solid var(--linea); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 600; font-size: 14px; color: var(--tinta); }
+.menu { display: flex; align-items: center; gap: 20px; position: static; inset: auto; margin: 0; padding: 0; border: 0; background: none; color: inherit; overflow: visible; width: auto; height: auto; }
+.saltar { position: absolute; left: 16px; top: -100px; z-index: 50; padding: 10px 14px; border-radius: 10px; background: var(--cobalto); color: #fff; font-weight: 700; text-decoration: none; }
+.saltar:focus { top: 12px; }
+.app-sec { padding-top: 0; }
+.app-det { background: var(--superficie); border: 1px solid var(--linea); border-radius: 14px; padding: 14px 18px; }
+.app-det summary { cursor: pointer; font-weight: 700; font-size: 18px; }
+.app-txt { margin: 12px 0 8px; color: var(--gris); }
+.app-txt-chico { margin: 0; font-size: 14px; }
 .menu a { color: var(--gris); text-decoration: none; font-weight: 550; font-size: 15px; }
 .menu a:hover { color: var(--tinta); }
 .pulso {
@@ -318,7 +328,18 @@ h3 { font-size: 18px; font-weight: 700; }
   .arquitectura { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
-  .menu { display: none; }
+  .menu-nav { order: 3; margin-left: 0; }
+  .menu-btn { display: inline-flex; }
+  .menu:not(:popover-open) { display: none; }
+  .menu:popover-open {
+    position: fixed; inset: 64px 16px auto auto; margin: 0;
+    flex-direction: column; align-items: stretch; gap: 4px;
+    min-width: 220px; padding: 10px;
+    background: var(--superficie); border: 1px solid var(--linea); border-radius: 14px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / .25);
+  }
+  .menu:popover-open a { padding: 10px 12px; border-radius: 8px; font-size: 16px; }
+  .menu:popover-open a:hover { background: var(--cobalto-suave); }
   .pulso { margin-left: auto; }
   .nodos { grid-template-columns: 1fr; }
   .consejos { grid-template-columns: 1fr; }

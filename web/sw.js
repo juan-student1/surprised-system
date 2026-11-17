@@ -1,7 +1,8 @@
 /* Centinela PWA: red primero para el contenido y caché para no quedarse sin web.
    Así cada deploy se ve al instante con conexión y, sin internet, sigue sirviendo la última copia. */
-const CACHE = "centinela-v4";
-const ASSETS = ["/", "/index.html", "/styles.css", "/app.js", "/sala3d.js", "/manifest.webmanifest", "/vendor/three.module.js", "/vendor/earth.jpg"];
+const CACHE = "centinela-v5";
+// Three.js y la textura (≈ 850 KB) NO se precargan: se bajan solo si el usuario llega a la sala 3D.
+const ASSETS = ["/", "/index.html", "/styles.css", "/app.js", "/manifest.webmanifest", "/icons/icono-192.png"];
 
 const guardar = (req, res) => {
   if (!res || !res.ok) return res;

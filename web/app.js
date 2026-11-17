@@ -416,6 +416,29 @@ try {
   if (guardado) { document.documentElement.dataset.tema = guardado; $("#tema-btn").textContent = guardado === "oscuro" ? "Claro" : "Oscuro"; }
 } catch {}
 
+/* Menú del celular (popover nativo): al elegir una sección se cierra solo */
+const menu = $("#menu");
+menu?.addEventListener("click", (e) => {
+  if (e.target.closest("a") && menu.matches(":popover-open")) menu.hidePopover();
+});
+
+/* Sala 3D: Three.js (≈ 650 KB) y la textura se bajan SOLO cuando la sección se acerca a la pantalla */
+(() => {
+  const sala = $("#sala");
+  if (!sala) return;
+  let cargada = false;
+  const cargar = () => {
+    if (cargada) return;
+    cargada = true;
+    import("./sala3d.js").catch(() => { sala.hidden = true; });
+  };
+  if (!("IntersectionObserver" in window)) { cargar(); return; }
+  const io = new IntersectionObserver((entradas) => {
+    if (entradas.some((x) => x.isIntersecting)) { io.disconnect(); cargar(); }
+  }, { rootMargin: "600px 0px" });
+  io.observe(sala);
+})();
+
 /* PWA: registro externo (sin <script> inline, compatible con el CSP estricto) */
 if ("serviceWorker" in navigator) {
   addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })

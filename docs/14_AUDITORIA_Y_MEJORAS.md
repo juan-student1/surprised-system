@@ -36,17 +36,17 @@ Falsos positivos descartados: 2 de semgrep (actividad *launcher* de Android, fav
 
 | # | Qué | Hallazgo | Esfuerzo |
 |---|---|---|---|
-| 1 | Subir `python-multipart` a la versión corregida | H2 | 10 min |
-| 2 | `/api/cluster` devuelve solo columnas públicas | B1 | 10 min |
-| 3 | Registro de llamadas: público enmascarado, completo solo con token | M2 | 30 min |
-| 4 | Token solo por encabezado + comparación en tiempo constante | B3 | 15 min |
+| 1 | Subir `python-multipart` a la versión corregida | H2 | ✅ hecho (0.0.32) |
+| 2 | `/api/cluster` devuelve solo columnas públicas | B1 | ✅ hecho |
+| 3 | Registro de llamadas: público enmascarado, completo solo con token | M2 | ✅ hecho |
+| 4 | Comparación en tiempo constante (el token por URL se mantiene por compatibilidad con MacroDroid/Atajos) | B3 | ✅ hecho (parcial) |
 | 5 | ~~Panel falla cerrado si falta la clave~~ | B2 | ✅ hecho |
-| 6 | Web: textos actualizados (JE en Google Cloud, IA en el Lenovo, link de GitHub) | Web #4 | 20 min |
-| 7 | Web: menú en celular con `popover` | Web #1 | 45 min |
-| 8 | Web: sala 3D se carga al verla + textura WebP/AVIF + fuera de la precarga del SW | Web #2 | 1 h |
-| 9 | Web: accesibilidad fina (`aria-label`, `role="img"`, saltar al contenido, `aria-live` acotado) | Web #5 | 30 min |
-| 10 | PWA: íconos 192/512/maskable, `id`, `scope`, `lang` | Web #3 | 30 min |
-| | **Total bloque 1** | | **≈ 3,5 h** |
+| 6 | Web: textos actualizados (JE en Google Cloud, IA en el Lenovo, link de GitHub) | Web #4 | ✅ hecho |
+| 7 | Web: menú en celular con `popover` | Web #1 | ✅ hecho |
+| 8 | Web: sala 3D se carga al verla + textura WebP (1,47 MB → 185 KB) + fuera de la precarga del SW | Web #2 | ✅ hecho |
+| 9 | Web: accesibilidad fina (`aria-label`, `role="img"`, saltar al contenido, `aria-live` acotado) | Web #5 | ✅ hecho |
+| 10 | PWA: íconos 192/512/maskable, `id`, `scope`, `lang` | Web #3 | ✅ hecho |
+| | **Bloque 1** | | **✅ en código (`main`); falta desplegar** |
 
 **Bloque 2 · Confianza gateway → nodos** (requiere secretos nuevos coordinados en Worker, JE, JP y n8n; se despliega en orden para no cortar el bot)
 

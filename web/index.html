@@ -10,16 +10,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css"><meta name="theme-color" content="#16203A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="saltar" href="#inicio">Saltar al contenido</a>
 
 <header class="barra">
   <a class="marca" href="#inicio" aria-label="Centinela, inicio">
     <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z"/><path class="check" d="M11 16.5l3.5 3.5L21 13"/></svg>
     Centinela
   </a>
-  <nav class="menu" aria-label="Secciones">
+  <nav class="menu-nav" aria-label="Secciones">
+    <button class="menu-btn" type="button" popovertarget="menu" aria-controls="menu">Menú</button>
+    <div class="menu" id="menu" popover="auto">
     <a href="#reportar">Reportar</a>
     <a href="#comunidad">Comunidad</a>
     <a href="#sala">Sala 3D</a>
@@ -28,9 +33,10 @@
     <a href="#app">App Android</a>
     <a href="/admin" rel="noopener">Panel admin</a>
     <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
+    </div>
   </nav>
-  <a class="pulso" href="#cluster" id="pulso" aria-live="polite">
-    <span class="punto"></span><span id="pulso-txt">Conectando…</span>
+  <a class="pulso" href="#cluster" id="pulso">
+    <span class="punto"></span><span id="pulso-txt" aria-live="polite">Conectando…</span>
   </a>
 </header>
 
@@ -58,7 +64,7 @@
     </div>
 
     <!-- Teléfono con la pantalla de llamada entrante -->
-    <div class="telefono" aria-live="polite">
+    <div class="telefono">
       <div class="pantalla" id="pantalla" data-nivel="espera">
         <div class="pant-sup"><span id="hora">--:--</span><span>Centinela activo</span></div>
         <p class="en-vivo" id="en-vivo" hidden>● En vivo · celular del proyecto</p>
@@ -74,7 +80,7 @@
           <div class="medidor-centro"><strong id="score">–</strong><span>de 100</span></div>
         </div>
 
-        <p class="veredicto" id="veredicto">Sin datos todavía</p>
+        <p class="veredicto" id="veredicto" aria-live="polite">Sin datos todavía</p>
         <p class="detalle" id="detalle"></p>
 
         <div class="acciones-tel">
@@ -158,11 +164,11 @@
       <p>El globo muestra cada reporte real entrando como un ataque hacia Colombia. Alrededor, el clúster vivo: Cloudflare reparte, JE o JP atiende, y la base de datos y la IA responden. Arrástralo con el mouse o toca el punto verde para acercar Colombia; dentro del zoom puedes seguir girándolo.</p>
     </div>
     <div class="sala-lienzo">
-      <canvas id="sala3d" aria-label="Visualización 3D del clúster y las amenazas en vivo"></canvas>
+      <canvas id="sala3d" role="img" aria-label="Visualización 3D del clúster y las amenazas en vivo"></canvas>
       <span class="sala-chip" id="sala-estado" data-e="cargando">Conectando…</span>
       <div class="sala-ctrls">
-        <button id="sala-sonido" type="button" aria-pressed="false" title="Activar sonido">🔇</button>
-        <button id="sala-full" type="button" title="Pantalla completa (sala de guerra)">⛶</button>
+        <button id="sala-sonido" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">🔇</button>
+        <button id="sala-full" type="button" aria-label="Pantalla completa" title="Pantalla completa (sala de guerra)">⛶</button>
       </div>
       <div class="sala-panel" id="sala-top">
         <h4>Top ciudades</h4>
@@ -181,7 +187,7 @@
   <section class="seccion cluster-sec" id="cluster">
     <div class="seccion-cab">
       <h2>El clúster, en vivo</h2>
-      <p>Centinela corre en dos equipos en casas distintas, unidos por Tailscale. Si el principal se apaga, el de respaldo atiende en segundos y nadie lo nota.</p>
+      <p>Centinela corre en dos nodos: el principal en una VM de Google Cloud y el respaldo en la VM de JP, unidos por Tailscale. Si el principal se apaga, el de respaldo atiende en segundos y nadie lo nota.</p>
     </div>
 
     <div class="aviso-failover" id="aviso-failover" hidden></div>
@@ -189,7 +195,7 @@
     <div class="nodos">
       <article class="nodo" id="nodo-JE" data-estado="cargando">
         <header>
-          <h3>JE <small>principal · Ryzen 5600G + RTX 4060</small></h3>
+          <h3>JE <small>principal · VM e2-micro en Google Cloud</small></h3>
           <span class="estado">—</span>
         </header>
         <svg class="ecg" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 H110 l8 -18 l10 36 l8 -26 l6 8 H300"/></svg>
@@ -204,7 +210,7 @@
       </article>
       <article class="nodo" id="nodo-JP" data-estado="cargando">
         <header>
-          <h3>JP <small>respaldo · laptop del compañero</small></h3>
+          <h3>JP <small>respaldo · VM de JP</small></h3>
           <span class="estado">—</span>
         </header>
         <svg class="ecg" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 H110 l8 -18 l10 36 l8 -26 l6 8 H300"/></svg>
@@ -228,7 +234,7 @@
         <div class="paso" id="diag-nodo"><b>JE / JP</b><span>API Centinela</span></div>
         <div class="flecha" aria-hidden="true"></div>
         <div class="paso"><b>Supabase</b><span>base de datos</span></div>
-        <div class="paso ia" id="diag-ia"><b>IA local</b><span>Ollama · qwen2.5</span></div>
+        <div class="paso ia" id="diag-ia"><b>IA local</b><span>Ollama · Lenovo de JE</span></div>
       </figure>
       <div class="bitacora">
         <h3>Bitácora del clúster</h3>
@@ -239,11 +245,11 @@
 
 
   <!-- APP ANDROID (compacta: evita saturar) -->
-  <section class="seccion" id="app" style="padding-top:0">
-    <details style="background:var(--superficie);border:1px solid var(--linea);border-radius:14px;padding:14px 18px">
-      <summary style="cursor:pointer;font-weight:700;font-size:18px">📱 App Android — detección automática (descargar APK)</summary>
-      <p style="margin:12px 0 8px;color:var(--gris)">En el Android con SIM instala <a href="app.apk" download>app.apk</a>, guarda URL <code>https://centinela.juan-gallego-sec.workers.dev</code> + token (<code>LLAMADAS_TOKEN</code> de JE), <b>Guardar</b> → <b>Dar permisos</b> → <b>Probar envío</b> (debe decir <code>OK</code>) → Batería sin restricciones + reiniciar. Si dice <code>401</code> revisa token; si dice <code>503/530</code> JE/JP offline.</p>
-      <p style="margin:0;color:var(--gris);font-size:14px">Al entrar una llamada avisa a <code>POST /api/llamada</code> y muestra notificación de alta prioridad. Si el servidor cae dice <b>“sin servidor”</b>, no te engaña. Demo para el celular de tu mamá: abre Telegram en ese celular y escribe al bot <code>/estado</code>.</p>
+  <section class="seccion app-sec" id="app">
+    <details class="app-det">
+      <summary>📱 App Android — detección automática (descargar APK)</summary>
+      <p class="app-txt">En el Android con SIM instala <a href="app.apk" download>app.apk</a>, guarda URL <code>https://centinela.juan-gallego-sec.workers.dev</code> + token (<code>LLAMADAS_TOKEN</code> de JE), <b>Guardar</b> → <b>Dar permisos</b> → <b>Probar envío</b> (debe decir <code>OK</code>) → Batería sin restricciones + reiniciar. Si dice <code>401</code> revisa token; si dice <code>503/530</code> JE/JP offline.</p>
+      <p class="app-txt app-txt-chico">Al entrar una llamada avisa a <code>POST /api/llamada</code> y muestra notificación de alta prioridad. Si el servidor cae dice <b>“sin servidor”</b>, no te engaña. Demo para el celular de tu mamá: abre Telegram en ese celular y escribe al bot <code>/estado</code>.</p>
     </details>
   </section>
 
@@ -263,7 +269,7 @@
 
 <footer class="pie">
   <p><b>Hecho por JP, JM y JE</b> · Ingeniería de Sistemas · Uniremington</p>
-  <p class="pie-tec">Proyecto de Sistemas Distribuidos · Linux en consola · Tailscale · Cloudflare · Supabase · Ollama · n8n · Telegram · <a href="/admin">Panel admin</a> · <a href="https://github.com/juanSecuri/surprised-system">GitHub</a></p>
+  <p class="pie-tec">Proyecto de Sistemas Distribuidos · Linux en consola · Tailscale · Cloudflare · Supabase · Ollama · n8n · Telegram · <a href="/admin">Panel admin</a> · <a href="https://github.com/juan-student1/surprised-system">GitHub</a></p>
 </footer>
 
 <!-- CHATBOT -->
@@ -286,7 +292,6 @@
   </form>
 </section>
 
-<script type="module" src="sala3d.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

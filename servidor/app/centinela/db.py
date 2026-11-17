@@ -107,6 +107,9 @@ def recientes_reportes(limite: int = 15):
     return q("""select r.numero, r.categoria, r.canal, r.nodo, r.creado, n.nivel, n.score from reportes r join numeros n using (numero) order by r.creado desc limit %s""", (min(limite, 50),), todos=True)
 
 def cluster_data():
-    nodos = q("""select *, (ultimo_latido > now() - make_interval(secs => %s)) as online from nodos order by nombre""", (LATIDO_SEG * 3,), todos=True)
+    # Solo columnas públicas: nunca la IP de Tailscale ni el hostname del equipo
+    nodos = q("""select nombre, rol, cpu, ram, disco, temp, version, iniciado, ultimo_latido,
+                        (ultimo_latido > now() - make_interval(secs => %s)) as online
+                 from nodos order by nombre""", (LATIDO_SEG * 3,), todos=True)
     ev = q("select nodo, tipo, detalle, creado from eventos order by creado desc limit 15", todos=True)
     return {"nodos": nodos, "eventos": ev}

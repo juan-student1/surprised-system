@@ -1,5 +1,5 @@
 /* CENTINELA · Sala de control 3D (Three.js vendorizado para respetar el CSP estricto)
-   Globo de amenazas con la Tierra real (./vendor/earth.jpg) + clúster vivo.
+   Globo de amenazas con la Tierra real (./vendor/earth.webp) + clúster vivo.
    - Arrastrar = girar el globo con inercia (también dentro del zoom de Colombia).
    - Clic en el punto verde de Colombia = zoom estable + pines de las 7 ciudades.
    - Las llamadas reales se pintan SOLO en el teléfono del hero (app.js).
@@ -37,7 +37,7 @@ function arrancar() {
   // ---------- GLOBO TIERRA (textura real, vendorizada localmente por CSP) ----------
   const R = 2.4;
   const globo = new THREE.Group(); scene.add(globo);
-  const tierraTex = new THREE.TextureLoader().load("./vendor/earth.jpg");
+  const tierraTex = new THREE.TextureLoader().load("./vendor/earth.webp");
   tierraTex.colorSpace = THREE.SRGBColorSpace;
   tierraTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   // Superficie sólida: la textura equirectangular coincide con enGlobo().
@@ -304,7 +304,7 @@ function arrancar() {
   async function amenazas(primera = false) {
     try {
       const d = await (await fetch(API + "/api/recientes?limite=8")).json();
-      (d || []).slice().reverse().forEach((x) => {
+      (d || []).toReversed().forEach((x) => {
         const clave = x.numero + "|" + x.creado;
         if (vistos.has(clave)) return;
         vistos.add(clave);
