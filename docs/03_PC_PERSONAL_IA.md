@@ -1,5 +1,7 @@
 # 03 · PC personal de Juan — Nodo de IA (`centinela-ia`, Omarchy / Arch)
 
+> **Desde 2026‑11‑17 este rol lo cumple el Lenovo de Juan.** El nombre en Tailscale sigue siendo `centinela-ia`, así que JE y JP no cambian nada (`OLLAMA_URL=http://centinela-ia:11434`).
+
 Este PC **no es servidor 24/7**: aporta la potencia para la IA (Ollama) y corre n8n para el bot de Telegram. Si está apagado, el sistema sigue funcionando (chat por reglas).
 
 ## Paso 1 · Ollama + Tailscale

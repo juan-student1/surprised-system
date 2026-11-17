@@ -5,9 +5,9 @@ Sistema distribuido y tolerante a fallos que identifica llamadas spam y estafas 
 **Grupo:** JE (Juan) · JP — Ingeniería de Sistemas, semestre 8.
 
 ```
-Usuarios → Cloudflare Worker (failover) → JE principal ─┐
-                                        ↘ JP respaldo ──┴→ Supabase Postgres
-                         Tailscale ↔ PC personal: Ollama + n8n + Telegram
+Usuarios → Cloudflare Worker (failover) → JE principal (VM Google Cloud) ─┐
+                                        ↘ JP respaldo (VM de JP) ─────────┴→ Supabase Postgres
+                         Tailscale ↔ Lenovo de Juan: Ollama + n8n + Telegram
 ```
 
 ## Empieza aquí
@@ -27,7 +27,7 @@ Usuarios → Cloudflare Worker (failover) → JE principal ─┐
 ```
 db/schema.sql              Esquema PostgreSQL
 servidor/app/              API FastAPI del nodo (igual en JE y JP)
-servidor/instalar_nodo.sh  Mint XFCE → servidor en consola (JE | JP)
+servidor/instalar_nodo.sh  Debian/Mint/Arch o VM de Google Cloud → servidor (JE | JP)
 servidor/actualizar.sh     Actualizar la API desde GitHub
 servidor/configurar_telegram.sh  Token del bot, chat_id y clave del celular
 gateway/                   Cloudflare Worker con failover

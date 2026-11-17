@@ -38,12 +38,12 @@ Terminal 1 — monitor que pregunta cada segundo quién atiende:
 while true; do printf "%s  " "$(date +%T)"; curl -s -o /dev/null -D - $GW/health | grep -i x-centinela-nodo || echo "SIN RESPUESTA"; sleep 1; done
 ```
 Terminal 2 — tumbar el principal (cualquiera de estas):
-- `ssh ...@centinela-je sudo systemctl stop centinela` (falla de software)
-- Desconectar el cable de red de JE (falla de red)
-- **Desconectar JE de la corriente** (falla de hardware) ← para la sustentación
+- Cloud Shell → `gcloud compute ssh centinela-je --zone=us-east1-b --tunnel-through-iap -- sudo systemctl stop centinela` (falla de software)
+- En la VM: `sudo tailscale funnel --https=443 off` (falla de red; se restaura con `sudo tailscale funnel --bg 8000`)
+- **Apagar la VM** (falla de hardware) ← para la sustentación: consola de Google Cloud → Instancias de VM → `centinela-je` → **Detener**, o `gcloud compute instances stop centinela-je --zone=us-east1-b`
 
 ✔ Esperado: la columna cambia de `JE` a `JP` sin ninguna línea `SIN RESPUESTA` (como máximo una petición tarda ~4 s).
-Restaurar JE → al arrancar vuelve a aparecer `JE` solo.
+Restaurar JE (**Iniciar** la VM o `gcloud compute instances start centinela-je --zone=us-east1-b`) → al arrancar (~1 min) vuelve a aparecer `JE` solo. La IP externa efímera cambia, pero no importa: se entra por Funnel.
 Medir y anotar: **tiempo de detección** y **peticiones perdidas** (debe ser 0).
 
 ## P5 · Modo degradado (falla de la nube)

@@ -8,7 +8,7 @@ Ingeniería de Sistemas · Semestre 8 · Grupo JE + JP
 
 ## 1. La idea en una frase
 
-Cada persona que recibe una llamada rara la reporta (web, Telegram o automáticamente desde el celular). Centinela junta los reportes en una base de datos, calcula un **puntaje de riesgo 0‑100** por número, una **IA local (Ollama)** lee las descripciones y clasifica el tipo de fraude, y cualquiera puede preguntar *"¿me contesta o no?"* a un chatbot en la web o en Telegram. Todo corre en **dos PCs viejos en clúster**: si se apaga el principal, el respaldo atiende sin que el usuario lo note.
+Cada persona que recibe una llamada rara la reporta (web, Telegram o automáticamente desde el celular). Centinela junta los reportes en una base de datos, calcula un **puntaje de riesgo 0‑100** por número, una **IA local (Ollama)** lee las descripciones y clasifica el tipo de fraude, y cualquiera puede preguntar *"¿me contesta o no?"* a un chatbot en la web o en Telegram. Todo corre en **dos nodos en clúster** (una VM gratis en Google Cloud y la VM de JP): si se apaga el principal, el respaldo atiende sin que el usuario lo note.
 
 **¿Por qué impacta?** Resuelve un problema real que todos sufren (en Colombia las llamadas de cobranza, falsos bancos y "llamadas perdidas" internacionales son diarias) y en la sustentación se puede **desconectar el servidor en vivo** y mostrar que todo sigue funcionando.
 
@@ -16,45 +16,48 @@ Cada persona que recibe una llamada rara la reporta (web, Telegram o automática
 
 ## 2. Arquitectura
 
+> **Cambio 2026‑11‑17:** el nodo **JE** dejó el PC de mesa y ahora es una **VM e2‑micro en Google Cloud** (`us-east1`). La IA (`centinela-ia`) pasa al **Lenovo** de Juan. JP sigue de respaldo en su VM. La URL pública de JE **no cambió** (mismo nombre en Tailscale), así que el gateway quedó igual.
+
+```mermaid
+flowchart TB
+    U["👥 Usuarios<br/>web · celular · Telegram"] --> CF
+
+    subgraph CF["☁️ Cloudflare (gratis)"]
+        GW["Gateway Worker<br/>failover ≤4 s + web"]
+    end
+
+    GW -- "1º intento" --> JE
+    GW -. "si JE falla" .-> JP
+
+    subgraph GCP["Google Cloud · us-east1 (nivel gratis)"]
+        JE["🟢 JE · PRINCIPAL<br/>VM e2-micro · Debian 12<br/>API FastAPI :8000 · SQLite búfer<br/>ufw + SSH solo por IAP"]
+    end
+
+    subgraph JPM["VM de JP"]
+        JP["🟠 JP · RESPALDO<br/>API FastAPI :8000 · SQLite búfer"]
+    end
+
+    JE -- "latidos 20 s" --> DB[("🗄️ Supabase Postgres<br/>numeros · reportes · nodos · eventos")]
+    JP -- "latidos 20 s" --> DB
+
+    subgraph LEN["Lenovo de Juan"]
+        IA["🧠 centinela-ia<br/>Ollama + n8n"]
+    end
+
+    JE -. "Tailscale: clasificar / chat" .-> IA
+    JP -. "Tailscale: clasificar / chat" .-> IA
+    IA --- TG["🤖 Bot de Telegram"]
 ```
-                        ┌───────────────────────────────────────┐
-  Usuarios ───────────► │ Cloudflare (gratis)                   │
-  web / celular         │  • Web Centinela (fase 2)             │
-                        │  • Gateway Worker con FAILOVER         │
-                        └──────┬───────────────────────┬────────┘
-                       1º intento                 si JE falla (≤4 s)
-                               ▼                       ▼
-            ┌──────────────────────────┐   ┌──────────────────────────┐
-            │ JE · todo‑en‑uno Athlon  │   │ JP · laptop              │
-            │ PRINCIPAL (consola)      │   │ RESPALDO (consola)       │
-            │ API Centinela :8000      │   │ API Centinela :8000      │
-            │ Tailscale Funnel (HTTPS) │   │ Tailscale Funnel (HTTPS) │
-            │ SQLite local (búfer)     │   │ SQLite local (búfer)     │
-            └────────────┬─────────────┘   └─────────────┬────────────┘
-                         │      latidos cada 20 s        │
-                         └──────────┐     ┌──────────────┘
-                                    ▼     ▼
-                        ┌──────────────────────────────┐
-                        │ Supabase Postgres (gratis)   │
-                        │ numeros · reportes · nodos   │
-                        │ eventos                      │
-                        └──────────────────────────────┘
-              red privada Tailscale (100.x.x.x) entre los 3 equipos
-                         │
-            ┌────────────┴────────────────────────────┐
-            │ PC personal de JE (Omarchy, Ryzen)      │
-            │ "centinela-ia": Ollama (qwen2.5:7b)     │◄── Telegram
-            │ n8n → Bot de Telegram                   │
-            └─────────────────────────────────────────┘
-```
+
+Gateway → JE/JP entra por **Tailscale Funnel** (HTTPS público sin abrir puertos); JE, JP y el Lenovo se hablan por la **red privada Tailscale**. Si el Lenovo está apagado, el chatbot responde **por reglas** y los reportes quedan sin clasificar (se reclasifican después). Si Supabase cae, cada nodo guarda en SQLite y sincroniza al volver.
 
 ### Roles de cada máquina
 
 | Equipo | Nombre en Tailscale | Rol | Qué corre |
 |---|---|---|---|
-| Todo‑en‑uno de Juan (AMD Athlon, 4 GB) | `centinela-je` | **Principal** | API Centinela, Funnel, búfer SQLite |
-| Laptop de JP | `centinela-jp` | **Respaldo** (activo‑activo) | Lo mismo que JE |
-| PC personal de Juan (Omarchy) | `centinela-ia` | Cerebro IA + automatización | Ollama, n8n, bot de Telegram |
+| VM e2‑micro en Google Cloud (`us-east1`, Debian 12, 1 GB) | `centinela-je` | **Principal** | API Centinela, Funnel, búfer SQLite |
+| VM de JP | `centinela-jp` | **Respaldo** (activo‑activo) | Lo mismo que JE |
+| Lenovo de Juan | `centinela-ia` | Cerebro IA + automatización | Ollama, n8n, bot de Telegram |
 | Cloudflare | `centinela.<cuenta>.workers.dev` | Puerta de entrada pública | Gateway con failover + web |
 | Supabase | — | Base de datos compartida | PostgreSQL |
 
@@ -67,6 +70,9 @@ Cada persona que recibe una llamada rara la reporta (web, Telegram o automática
 5. **IA local, no en la nube** → Ollama corre en el PC con más potencia; los servidores lo consultan por la red privada. Si el PC de IA está apagado, el chatbot responde con reglas (degradación elegante).
 6. **Privacidad** → nunca se guarda la IP ni el usuario real: solo un hash anónimo. RLS activado en Supabase para bloquear su API pública.
 7. **Servidores en consola** → sin escritorio gráfico se liberan ~400‑600 MB de RAM en equipos de 4 GB.
+8. **JE en una VM de Compute Engine y no en Cloud Run** → la arquitectura necesita un proceso **siempre encendido** (latidos cada 20 s, sincronización de SQLite) y **Tailscale** (Funnel + IA por red privada). Cloud Run apaga la CPU sin peticiones, su disco es efímero (se perdería el búfer SQLite), el arranque en frío puede superar los 4 s del failover y Tailscale no corre normal dentro del contenedor. La e2‑micro entra en el **nivel gratis** y reutiliza `instalar_nodo.sh` sin reescribir nada.
+9. **Cero puertos públicos en la nube** → se borraron las reglas por defecto de RDP e ICMP; SSH solo desde el túnel **IAP** de Google (`35.235.240.0/20`, exige login en la cuenta). El tráfico web entra por Tailscale Funnel. Dentro de la VM, `ufw` niega todo lo demás y `fail2ban` vigila SSH.
+10. **Mínimo gasto del crédito** → solo un recurso cobra: la IP pública efímera (~3,6 USD/mes, necesaria para salir a internet; Cloud NAT costaría ~30). Disco **estándar** (no "equilibrado"), sin snapshots, sin Ops Agent, sin IP estática. Alerta de presupuesto desde el día 1 sin contar créditos.
 
 ### Cómo se calcula el riesgo
 
@@ -80,12 +86,12 @@ Cada persona que recibe una llamada rara la reporta (web, Telegram o automática
 
 ## 3. Estado actual
 
-**En producción (2026‑11‑02):**
+**En producción (2026‑11‑17):**
 - Gateway: `https://centinela.juan-gallego-sec.workers.dev`
-- JE: `https://centinela-je.tailaf5c0b.ts.net` — Mint 22.2 en consola, RAM 63 % → 17 %
-- JP: `https://centinela-jp.tailaf5c0b.ts.net` (pendiente de instalar)
-- IA: `centinela-ia` (100.87.246.120), Ollama qwen2.5:7b
-- BD: Supabase (US West), proyecto `centinela`
+- JE: `https://centinela-je.tailaf5c0b.ts.net` — **VM e2‑micro Google Cloud** (`us-east1-b`, Debian 12), RAM ~46 % con zram. Antes (2026‑11‑02): Mint 22.2 en consola, RAM 63 % → 17 %
+- JP: `https://centinela-jp.tailaf5c0b.ts.net` (respaldo, en su VM)
+- IA: `centinela-ia` en el Lenovo de Juan (pendiente de instalar), Ollama
+- BD: Supabase, proyecto `centinela`
 - Prueba extremo a extremo OK: reporte → clasificación IA → chatbot con `fuente: ollama`. Latencia gateway 0.6‑1.9 s.
 
 ### Archivos
@@ -94,7 +100,7 @@ Cada persona que recibe una llamada rara la reporta (web, Telegram o automática
 |---|---|---|
 | `db/schema.sql` | Tablas numeros, reportes, nodos, eventos | ✅ probado en PostgreSQL 16 |
 | `servidor/app/` | API FastAPI del nodo (11 rutas) | ✅ probado: 2 nodos, failover, modo degradado, IA |
-| `servidor/instalar_nodo.sh` | Convierte Mint XFCE en servidor (JE o JP) en un comando | ✅ JE instalado (2026‑11‑02) · ⏳ JP |
+| `servidor/instalar_nodo.sh` | Convierte Debian/Ubuntu/Mint/Arch en servidor (JE o JP) en un comando; detecta Google Cloud (SSH por IAP) | ✅ JE en Google Cloud (2026‑11‑17) · ⏳ JP |
 | `gateway/` | Cloudflare Worker con failover | ✅ probado: apagando JE responde JP |
 | `ia/instalar_ollama.sh` | Ollama + Tailscale en Omarchy | ✅ `centinela-ia` con qwen2.5:7b |
 | `ia/instalar_n8n.sh` | n8n + webhook público para Telegram | ⏳ fase 3 |
@@ -173,6 +179,9 @@ Flujo: *Telegram Trigger → Switch por comando → HTTP Request al Gateway → 
 | Supabase caído | Modo degradado con SQLite + sincronización automática |
 | PC de IA apagado | Chatbot responde con reglas; reportes quedan sin clasificar y se pueden reclasificar después |
 | n8n solo corre en el PC personal | Aceptado para la demo; en fase 4 el bot puede migrarse a JP |
+| VM de 1 GB de RAM | zram 50 % (zstd) + API limitada a 600 MB; uso real ~46 % |
+| Gasto del crédito de Google Cloud | Solo e2‑micro del nivel gratis; alerta de presupuesto de 5‑10 USD sin contar créditos; ver §7 |
+| Tailscale caído en la VM | Acceso de emergencia por SSH vía IAP desde Cloud Shell |
 | Wi‑Fi inestable en los servidores | Preferir cable de red; Tailscale reconecta solo |
 | 4 GB de RAM | Modo consola + zram + límite de 600 MB a la API |
 
@@ -193,3 +202,23 @@ Flujo: *Telegram Trigger → Switch por comando → HTTP Request al Gateway → 
 | Gateway con JE apagado | ✅ responde JP, encabezado `X-Centinela-Failover` |
 
 Lo que falta probar en el hardware real está en `05_PRUEBAS.md`.
+
+---
+
+## 7. Costos en Google Cloud y cierre del curso
+
+| Recurso | Costo |
+|---|---|
+| VM e2‑micro `us-east1` | $0 (nivel gratis) |
+| Disco estándar 20 GB | $0 (nivel gratis hasta 30 GB) |
+| IP pública efímera | ~3,6 USD/mes (lo único que cobra) |
+| Tráfico de salida | $0 (< 1 GB/mes) |
+| **Estimado hasta diciembre** | **~4‑6 USD de los 300 de crédito** |
+
+**Al terminar el curso (diciembre), en este orden:**
+1. Google Cloud → selector de proyectos → `centinela` → **Configuración → Cerrar (shut down)** el proyecto (borra la VM, el disco y la IP de una vez).
+2. **Facturación → Administración de cuentas → Cerrar cuenta de facturación.**
+3. **Facturación → Métodos de pago → quitar la tarjeta** (Google no deja quitarla con la cuenta abierta). Luego eliminar la tarjeta virtual en la app del banco.
+4. Telegram: **@BotFather → `/revoke`** del token del bot.
+5. Tailscale: borrar las máquinas `centinela-*` que ya no se usen.
+6. PC de mesa: `sudo rm -rf /opt/centinela` (el `.env` del nodo viejo).

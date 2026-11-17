@@ -170,7 +170,18 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
   echo
   amarillo "   Pega la cadena de conexión de Supabase (Session pooler). Ej:"
   amarillo "   postgresql://postgres.abcd:CLAVE@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-  read -r -p "   DATABASE_URL: " DBURL
+  read -r -s -p "   DATABASE_URL (no se ve al pegar): " DBURL; echo
+  if [[ "$DBURL" != *pooler.supabase.com* && "$DBURL" == *supabase.co* ]]; then
+    amarillo "   ⚠ Eso parece la 'Direct connection' (solo IPv6 en el plan gratis). Usa la del Session pooler."
+  fi
+  # Si la contraseña trae / # ? @ rompe la cadena: se codifica (ej. / → %2F)
+  DBURL=$(U="$DBURL" python3 -c 'import os,urllib.parse as u
+s=os.environ["U"].strip()
+try:
+    e,r=s.split("://",1); c,h=r.rsplit("@",1); us,pw=c.split(":",1)
+    print(f"{e}://{us}:{u.quote(u.unquote(pw),safe=str())}@{h}")
+except ValueError:
+    print(s)')
   read -r -p "   Nombre Tailscale del PC con Ollama [centinela-ia]: " IAHOST
   IAHOST="${IAHOST:-centinela-ia}"
   read -r -p "   Frase secreta (IGUAL en JE y JP): " SAL
