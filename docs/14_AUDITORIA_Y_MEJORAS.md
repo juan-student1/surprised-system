@@ -46,7 +46,7 @@ Falsos positivos descartados: 2 de semgrep (actividad *launcher* de Android, fav
 | 8 | Web: sala 3D se carga al verla + textura WebP (1,47 MB → 185 KB) + fuera de la precarga del SW | Web #2 | ✅ hecho |
 | 9 | Web: accesibilidad fina (`aria-label`, `role="img"`, saltar al contenido, `aria-live` acotado) | Web #5 | ✅ hecho |
 | 10 | PWA: íconos 192/512/maskable, `id`, `scope`, `lang` | Web #3 | ✅ hecho |
-| | **Bloque 1** | | **✅ en código (`main`); falta desplegar** |
+| | **Bloque 1** | | **✅ desplegado (Worker + JE, 2026‑11‑17)** |
 
 **Bloque 2 · Confianza gateway → nodos** (requiere secretos nuevos coordinados en Worker, JE, JP y n8n; se despliega en orden para no cortar el bot)
 
@@ -55,7 +55,7 @@ Falsos positivos descartados: 2 de semgrep (actividad *launcher* de Android, fav
 | 11 | Secreto compartido gateway→nodo; el nodo solo cree la IP del cliente si llega del gateway | M1 | ✅ en código |
 | 12 | El servidor decide la identidad de quien reporta (el campo del cliente se ignora) | H1 | ✅ en código |
 | 13 | El endpoint del bot solo acepta peticiones de n8n | H1 | ✅ en código (+ credencial en n8n) |
-| | **Bloque 2** | | **✅ en código; falta desplegar en orden** |
+| | **Bloque 2** | | **✅ `GATEWAY_SECRET` desplegado (Worker + JE) · ⏳ `BOT_SECRET` (n8n + JE) · ⏳ JP** |
 
 #### Despliegue del bloque 2 (en este orden, no corta nada)
 El código es compatible hacia atrás: un nodo **sin** los secretos funciona como antes. Por eso el orden importa:
