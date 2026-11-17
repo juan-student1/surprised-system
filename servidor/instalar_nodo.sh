@@ -4,7 +4,7 @@
 #  Funciona en Debian/Ubuntu/Linux Mint (apt) Y en Arch/omarchy (pacman).
 #
 #  Uso (desde la carpeta del proyecto):
-#     sudo bash servidor/instalar_nodo.sh JE      # principal (el de mesa con 4060, omarchy)
+#     sudo bash servidor/instalar_nodo.sh JE      # principal (VM e2-micro en Google Cloud, Debian 12)
 #     sudo bash servidor/instalar_nodo.sh JP      # respaldo (laptop del compañero)
 #
 #  Opcional:
@@ -50,6 +50,12 @@ instalar() {   # instalar paquete...  (traduce nombres entre distros)
   fi
 }
 NOLOGIN="$(command -v nologin || echo /usr/sbin/nologin)"
+
+# ¿Estamos en una VM de Google Cloud? (el SSH de la consola entra por el túnel IAP)
+EN_GCP=no
+grep -qi 'Google Compute Engine' /sys/class/dmi/id/product_name 2>/dev/null && EN_GCP=si
+IAP_RANGO=35.235.240.0/20   # rango oficial del túnel IAP de Google
+[[ "$EN_GCP" == "si" ]] && verde "Google Cloud detectado: se deja SSH solo por IAP ($IAP_RANGO) y Tailscale"
 
 # ---------------------------------------------------------------------
 azul "1/8 Hora del sistema y paquetes base"
@@ -165,8 +171,8 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
   amarillo "   Pega la cadena de conexión de Supabase (Session pooler). Ej:"
   amarillo "   postgresql://postgres.abcd:CLAVE@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
   read -r -p "   DATABASE_URL: " DBURL
-  read -r -p "   Nombre Tailscale del PC con Ollama [centinela-je]: " IAHOST
-  IAHOST="${IAHOST:-centinela-je}"
+  read -r -p "   Nombre Tailscale del PC con Ollama [centinela-ia]: " IAHOST
+  IAHOST="${IAHOST:-centinela-ia}"
   read -r -p "   Frase secreta (IGUAL en JE y JP): " SAL
   cat > "$APP_DIR/.env" <<EOF
 NODO_NOMBRE=$ROL_CORTO
@@ -219,6 +225,8 @@ ufw default allow outgoing
 ufw allow in on tailscale0
 ufw allow from 192.168.0.0/16 to any port 22 proto tcp
 ufw allow from 10.0.0.0/8 to any port 22 proto tcp
+# En Google Cloud: sin esto, el botón SSH de la consola / Cloud Shell quedaría bloqueado
+[[ "$EN_GCP" == "si" ]] && ufw allow from "$IAP_RANGO" to any port 22 proto tcp
 ufw --force enable
 
 # fail2ban: bloquea la IP que falle varias veces la clave de SSH
@@ -229,7 +237,7 @@ bantime = 1h
 findtime = 10m
 maxretry = 4
 backend = systemd
-ignoreip = 127.0.0.1/8 100.64.0.0/10 192.168.0.0/16 10.0.0.0/8
+ignoreip = 127.0.0.1/8 100.64.0.0/10 192.168.0.0/16 10.0.0.0/8 35.235.240.0/20
 
 [sshd]
 enabled = true
