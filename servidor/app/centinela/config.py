@@ -25,7 +25,10 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 TELEGRAM_API = os.getenv("TELEGRAM_API", "https://api.telegram.org")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")  # a quién avisar de llamadas reales
 LLAMADAS_TOKEN = os.getenv("LLAMADAS_TOKEN", "")  # clave que usa el celular para avisar
-CONTROL_TOKEN = os.getenv("CONTROL_TOKEN", "")  # clave que usa el gateway para detener/reactivar el nodo
+CONTROL_TOKEN = os.getenv("CONTROL_TOKEN", "")
+# Bloque 2 de la auditoría (vacíos = comportamiento anterior, para desplegar sin cortes):
+GATEWAY_SECRET = os.getenv("GATEWAY_SECRET", "")  # solo si llega este secreto se cree la IP que reenvía el gateway
+BOT_SECRET = os.getenv("BOT_SECRET", "")          # /api/bot solo acepta peticiones de n8n con este secreto  # clave que usa el gateway para detener/reactivar el nodo
 MANTENIMIENTO = {"on": False}  # el panel puede "detener" (simular caida) este nodo para demostrar el failover
 
 # Neon (plan gratis) apaga la BD tras 5 min sin uso y cobra horas de cómputo:

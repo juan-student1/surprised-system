@@ -448,8 +448,10 @@ async function proxy(req, env, url, ctx) {
     try {
       const h = new Headers(req.headers);
       h.delete("host");
+      // El cliente no puede colar su propia "IP" ni el secreto: se borran y los pone el gateway.
+      for (const x of ["x-real-ip", "x-forwarded-for", "cf-connecting-ip", "x-centinela-gateway"]) h.delete(x);
       h.set("X-Real-IP", req.headers.get("CF-Connecting-IP") || "");
-      h.set("X-Centinela-Gateway", "1");
+      h.set("X-Centinela-Gateway", env.GATEWAY_SECRET || "1");   // wrangler secret put GATEWAY_SECRET
       const r = await conTimeout(n.base + url.pathname + url.search,
         { method: req.method, headers: h, body: cuerpo }, esLento ? TIMEOUT_CHAT_MS : TIMEOUT_MS);
       if (r.status >= 500) { await marcarCaido(n); fallas.push(`${n.nombre}:HTTP ${r.status}`); continue; }

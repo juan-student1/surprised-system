@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, MANTENIMIENTO, CONSEJOS, log
+from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, log
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
 from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha
 from .ia import ollama_disponible, ollama_chat
@@ -19,7 +19,7 @@ class Reporte(BaseModel):
     categoria: str | None = None
     descripcion: str | None = Field(None, max_length=500)
     canal: str = Field("web", max_length=20)
-    reportero_id: str | None = Field(None, max_length=64)
+    # Sin reportero_id: quién reporta lo decide el servidor (IP real vía gateway), nunca el cliente.
 
 class Chat(BaseModel):
     mensaje: str = Field(..., max_length=600)
@@ -147,7 +147,7 @@ def registrar(app: FastAPI):
 
     @app.post("/api/reportar")
     def reportar(r: Reporte, request: Request, bg: BackgroundTasks):
-        return registrar_reporte(r.numero, r.categoria, r.descripcion, r.canal, r.reportero_id or ip_cliente(request), bg)
+        return registrar_reporte(r.numero, r.categoria, r.descripcion, r.canal, ip_cliente(request), bg)
 
     @app.get("/api/top")
     def top(limite: int = 10): return top_numeros(limite)
@@ -214,7 +214,10 @@ def registrar(app: FastAPI):
         return filas
 
     @app.post("/api/bot")
-    def bot(m: MensajeBot, bg: BackgroundTasks):
+    def bot(m: MensajeBot, request: Request, bg: BackgroundTasks):
+        # El chat_id solo es confiable si la petición viene de n8n (que lo recibe de Telegram)
+        if BOT_SECRET and not hmac.compare_digest(request.headers.get("x-centinela-bot") or "", BOT_SECRET):
+            raise HTTPException(401, "No autorizado")
         t = (m.contacto or m.texto or "").strip()
         cmd, _, resto = t.partition(" "); cmd = cmd.lower().split("@")[0]
         try:

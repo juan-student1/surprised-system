@@ -5,6 +5,7 @@ formato/enmascarado para Telegram y web, métricas del equipo e IP del cliente.
 """
 
 import hashlib
+import hmac
 import math
 import re
 import subprocess
@@ -12,7 +13,7 @@ import subprocess
 import psutil
 from fastapi import HTTPException, Request
 
-from .config import PAISES, PREFIJOS_RIESGO, CAT_TXT, EMOJI, SAL
+from .config import PAISES, PREFIJOS_RIESGO, CAT_TXT, EMOJI, SAL, GATEWAY_SECRET
 
 
 def normalizar(raw: str) -> str:
@@ -65,11 +66,18 @@ def nivel_de(score: int) -> str:
 
 
 def ip_cliente(req: Request) -> str:
-    for h in ("x-real-ip", "cf-connecting-ip", "x-forwarded-for"):
+    """IP real del cliente. Con GATEWAY_SECRET solo se cree la IP que reenvía el gateway (Cloudflare);
+    quien entre directo por el Funnel no puede inventarse otra IP con encabezados."""
+    directa = req.client.host if req.client else "?"
+    if GATEWAY_SECRET:
+        if hmac.compare_digest(req.headers.get("x-centinela-gateway") or "", GATEWAY_SECRET):
+            return (req.headers.get("x-real-ip") or directa).strip()
+        return directa
+    for h in ("x-real-ip", "cf-connecting-ip", "x-forwarded-for"):   # modo anterior (sin secreto)
         v = req.headers.get(h)
         if v:
             return v.split(",")[0].strip()
-    return req.client.host if req.client else "?"
+    return directa
 
 
 def hash_reportero(valor: str) -> str:

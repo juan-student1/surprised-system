@@ -38,6 +38,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://centinela.juan-gallego-sec.workers.dev/api/bot",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: $json.message.chat.id, texto: $json.message.text || $json.message.caption || null, contacto: $json.message.contact ? $json.message.contact.phone_number : null, nombre: $json.message.from.first_name }) }}",
@@ -53,7 +55,13 @@
         260,
         300
       ],
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Centinela Bot (x-centinela-bot)"
+        }
+      }
     },
     {
       "parameters": {

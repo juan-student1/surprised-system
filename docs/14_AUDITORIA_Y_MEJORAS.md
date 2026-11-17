@@ -52,10 +52,32 @@ Falsos positivos descartados: 2 de semgrep (actividad *launcher* de Android, fav
 
 | # | Qué | Hallazgo | Esfuerzo |
 |---|---|---|---|
-| 11 | Secreto compartido gateway→nodo; el nodo solo cree la IP del cliente si llega del gateway | M1 | 1 h |
-| 12 | El servidor decide la identidad de quien reporta + límite por número | H1 | 1 h |
-| 13 | El endpoint del bot solo acepta peticiones de n8n | H1 | 30 min (+ ajuste en n8n) |
-| | **Total bloque 2** | | **≈ 2,5 h** |
+| 11 | Secreto compartido gateway→nodo; el nodo solo cree la IP del cliente si llega del gateway | M1 | ✅ en código |
+| 12 | El servidor decide la identidad de quien reporta (el campo del cliente se ignora) | H1 | ✅ en código |
+| 13 | El endpoint del bot solo acepta peticiones de n8n | H1 | ✅ en código (+ credencial en n8n) |
+| | **Bloque 2** | | **✅ en código; falta desplegar en orden** |
+
+#### Despliegue del bloque 2 (en este orden, no corta nada)
+El código es compatible hacia atrás: un nodo **sin** los secretos funciona como antes. Por eso el orden importa:
+
+1. **Generar los dos secretos** (en el Lenovo) y guardarlos en 1Password como `GATEWAY_SECRET` y `BOT_SECRET`:
+   ```bash
+   openssl rand -hex 32 | wl-copy     # → 1Password: GATEWAY_SECRET
+   openssl rand -hex 32 | wl-copy     # → 1Password: BOT_SECRET
+   ```
+2. **Worker** (Lenovo): `cd gateway && npx wrangler secret put GATEWAY_SECRET` (pegar) → `npx wrangler deploy`.
+3. **n8n** (Lenovo): *Credentials → Add credential → Header Auth* · Name `x-centinela-bot` · Value = `BOT_SECRET` · nombre de la credencial `Centinela Bot (x-centinela-bot)`. Reimportar `ia/n8n/centinela_bot.json` (o en el nodo **Preguntar a Centinela**: *Authentication → Generic → Header Auth* → esa credencial) → **Save**.
+4. **JE** (Cloud Shell → VM): actualizar y poner los secretos sin que se vean:
+   ```bash
+   cd ~/surprised-system && sudo bash servidor/actualizar.sh
+   poner(){ read -rsp "$1 (no se ve al pegar): " V; echo; sudo sed -i "/^$1=/d" /opt/centinela/.env; printf '%s=%s\n' "$1" "$V" | sudo tee -a /opt/centinela/.env >/dev/null; unset V; }
+   poner GATEWAY_SECRET
+   poner BOT_SECRET
+   clear; sudo systemctl restart centinela
+   ```
+5. **JP**: lo mismo que JE (ver `12_PRUEBA_CON_JP.md`).
+
+**Comprobar:** la web consulta y reporta normal; el bot responde en Telegram; un POST directo al bot sin la credencial devuelve `401`.
 
 ### Después de la sustentación (opcional)
 | # | Qué | Origen | Esfuerzo |

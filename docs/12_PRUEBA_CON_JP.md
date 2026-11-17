@@ -33,6 +33,14 @@ OLLAMA_URL=http://centinela-ia:11434
 OLLAMA_MODEL=centinela
 LLAMADAS_TOKEN=<la misma de JE>
 CONTROL_TOKEN=<opcional en JP: el panel solo detiene a JE>
+GATEWAY_SECRET=<el mismo del Worker y de JE>
+BOT_SECRET=<el mismo de n8n y de JE>
+```
+Los dos últimos (auditoría, bloque 2) se ponen **sin que se vean** con el bloque `poner` de `docs/14_AUDITORIA_Y_MEJORAS.md` → *Despliegue del bloque 2*.
+
+**Comprobar que los secretos coinciden sin mostrarlos** (en JE y en JP deben salir iguales):
+```bash
+for k in LLAMADAS_TOKEN GATEWAY_SECRET BOT_SECRET; do printf '%s ' $k; sudo grep "^$k=" /opt/centinela/.env | sha256sum | cut -c1-12; done
 ```
 **Comprobar que la clave del celular es la misma sin mostrarla** (correr en JE y en JP, deben salir iguales):
 ```bash
