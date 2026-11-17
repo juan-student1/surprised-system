@@ -21,6 +21,7 @@ Usuarios → Cloudflare Worker (failover) → JE principal (VM Google Cloud) ─
 8. [`docs/07_LLAMADAS_REALES.md`](docs/07_LLAMADAS_REALES.md) — detectar llamadas reales (Android / iPhone)
 9. [`docs/08_CHECKLIST_FINAL.md`](docs/08_CHECKLIST_FINAL.md) — integrar a JP y guion de sustentación
 10. [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) — IA en el Lenovo: Ollama + n8n + bot (paso a paso)
+11. [`docs/12_PRUEBA_CON_JP.md`](docs/12_PRUEBA_CON_JP.md) — lo que falta con JP + prueba de failover
 
 **En vivo:** https://centinela.juan-gallego-sec.workers.dev
 

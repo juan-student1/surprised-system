@@ -23,6 +23,12 @@ echo "Clave para el celular (LLAMADAS_TOKEN)."
 echo "  · En JE: deja vacío y se genera una nueva (o se conserva la que ya había)."
 echo "  · En JP: pega la MISMA que se generó en JE."
 read -r CLAVE
+NODO_ACTUAL="$(grep -E '^NODO_NOMBRE=' "$ENV" | cut -d= -f2- || true)"
+if [[ -z "$CLAVE" && "$NODO_ACTUAL" == "JP" ]]; then
+  # Si JP inventa su propia clave, el celular (que tiene la de JE) recibe 401 cuando atiende JP
+  # y la llamada NO aparece en la web. Por eso en JP es obligatorio pegar la de JE.
+  echo "✘ En JP la clave del celular es OBLIGATORIA y debe ser la MISMA de JE (está en 1Password)."; exit 1
+fi
 if [[ -z "$CLAVE" ]]; then
   CLAVE="$(grep -E '^LLAMADAS_TOKEN=' "$ENV" | cut -d= -f2- || true)"
   [[ -n "$CLAVE" ]] || CLAVE="$(head -c 18 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)"

@@ -24,7 +24,8 @@ fi
 azul "Modo: $MODO · modelo base: $BASE"
 
 # ---- límites de consumo de Ollama (drop-in de systemd) ----
-if systemctl list-unit-files 2>/dev/null | grep -q '^ollama.service'; then
+# (ojo: con "set -o pipefail", "grep -q" cierra el tubo antes y systemctl falla con SIGPIPE → se usa cat)
+if systemctl cat ollama.service >/dev/null 2>&1; then
   azul "Limitando el consumo de Ollama (systemd)"
   sudo mkdir -p /etc/systemd/system/ollama.service.d
   sudo tee /etc/systemd/system/ollama.service.d/centinela.conf >/dev/null <<EOF
@@ -57,7 +58,7 @@ azul "Prueba (debe negarse a un tema ajeno):"
 ollama run centinela "cuánto es 2+2?" 2>/dev/null | head -3 || true
 
 # ---- qué poner en los nodos ----
-HOST_TS="$(tailscale status --self --json 2>/dev/null | grep -o '"DNSName":"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/\.$//' || true)"
+HOST_TS="$(tailscale status --self --json 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))' 2>/dev/null || true)"
 [ -z "${HOST_TS:-}" ] && HOST_TS="$(hostname)"
 azul "AHORA, en JE y en JP, pon en /opt/centinela/.env:"
 cat <<EOF

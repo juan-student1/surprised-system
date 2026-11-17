@@ -36,6 +36,8 @@ def local():
     c.row_factory = sqlite3.Row
     c.execute("create table if not exists pendientes (id integer primary key autoincrement, payload text not null, creado text default current_timestamp)")
     c.execute("create table if not exists cache (numero text primary key, data text not null, actualizado text default current_timestamp)")
+    # Llamadas reales recibidas por ESTE nodo (respaldo si Supabase falla): así la web las ve igual
+    c.execute("create table if not exists llamadas_local (id integer primary key autoincrement, data text not null, creado text not null)")
     return c
 
 def evento(tipo: str, detalle: str = ""):

@@ -15,9 +15,54 @@
  * Si no, se reenvían a JE/JP como antes.
  */
 
-const TIMEOUT_MS = 8000;        // un nodo que no responde en 8 s se considera caído
+const TIMEOUT_MS = 6000;        // un nodo que no responde en 6 s se considera caído
+const TIMEOUT_SALUD_MS = 2500;  // chequeo rápido de /health antes de la IA
 const TIMEOUT_CHAT_MS = 90000;  // la IA puede tardar
 const MAX_BODY = 4096;          // cuerpo máximo de una petición (bytes); corta payloads de ataque
+
+// ---------- Cortacircuito (failover rápido) ----------
+// Si un nodo falla, se marca caído 30 s: las peticiones van DIRECTO al otro sin esperar timeouts.
+// Mientras está marcado, se le hace un chequeo de /health en segundo plano para devolverlo apenas reviva.
+// Se guarda en memoria del isolate y en la Cache API (compartida por los isolates del mismo datacenter).
+const CAIDO_MS = 30000;
+const VIVO_RECIENTE_MS = 15000;
+const caidos = new Map();   // nombre -> hasta (ms)
+const vivosOk = new Map();  // nombre -> último ok (ms)
+const claveBreaker = (n) => new Request("https://breaker.centinela.internal/" + n.nombre);
+
+async function estaCaido(n) {
+  const hasta = caidos.get(n.nombre) || 0;
+  if (hasta > Date.now()) return true;
+  try {
+    const r = await caches.default.match(claveBreaker(n));
+    if (r) {
+      const h = Number(await r.text()) || 0;
+      if (h > Date.now()) { caidos.set(n.nombre, h); return true; }
+    }
+  } catch (e) {}
+  return false;
+}
+async function marcarCaido(n) {
+  const hasta = Date.now() + CAIDO_MS;
+  caidos.set(n.nombre, hasta);
+  vivosOk.delete(n.nombre);
+  try {
+    await caches.default.put(claveBreaker(n), new Response(String(hasta), { headers: { "Cache-Control": "max-age=30" } }));
+  } catch (e) {}
+}
+async function marcarVivo(n) {
+  vivosOk.set(n.nombre, Date.now());
+  if (caidos.has(n.nombre)) {
+    caidos.delete(n.nombre);
+    try { await caches.default.delete(claveBreaker(n)); } catch (e) {}
+  }
+}
+async function sondear(n) {   // chequeo en segundo plano de un nodo marcado caído
+  try {
+    const r = await conTimeout(n.base + "/health", {}, TIMEOUT_SALUD_MS);
+    if (r.status < 500) await marcarVivo(n); else await marcarCaido(n);
+  } catch (e) { await marcarCaido(n); }
+}
 
 const VENTANA_MS = 60000;
 const visitas = new Map();
@@ -36,19 +81,41 @@ function limitado(clave, maximo) {
   return cola.length > maximo;
 }
 
-function loginBloqueado(ip) {
+// Bloqueo de fuerza bruta: 5 fallos por IP o 20 fallos en total (cualquier IP) bloquean 15 min.
+// Se guarda en memoria y en la Cache API para que valga entre isolates del mismo datacenter.
+const BLOQUEO_MS = 15 * 60 * 1000;
+const MAX_FALLOS_IP = 5;
+const MAX_FALLOS_GLOBAL = 20;
+const claveFallos = (k) => new Request("https://login.centinela.internal/" + encodeURIComponent(k));
+async function leerFallos(k) {
   const ahora = Date.now();
-  const arr = (loginFallos.get(ip) || []).filter((t) => ahora - t < 15 * 60 * 1000);
-  loginFallos.set(ip, arr);
-  return arr.length >= 5;
+  let arr = loginFallos.get(k) || [];
+  try {
+    const r = await caches.default.match(claveFallos(k));
+    if (r) arr = arr.concat(JSON.parse(await r.text()));
+  } catch (e) {}
+  arr = [...new Set(arr)].filter((t) => ahora - t < BLOQUEO_MS);
+  loginFallos.set(k, arr);
+  return arr;
 }
-function registrarFallo(ip) {
-  const ahora = Date.now();
-  const arr = (loginFallos.get(ip) || []).filter((t) => ahora - t < 15 * 60 * 1000);
-  arr.push(ahora);
-  loginFallos.set(ip, arr);
+async function loginBloqueado(ip) {
+  return (await leerFallos("ip:" + ip)).length >= MAX_FALLOS_IP
+    || (await leerFallos("global")).length >= MAX_FALLOS_GLOBAL;
 }
-function limpiarFallos(ip) { loginFallos.delete(ip); }
+async function registrarFallo(ip) {
+  for (const k of ["ip:" + ip, "global"]) {
+    const arr = await leerFallos(k);
+    arr.push(Date.now());
+    loginFallos.set(k, arr);
+    try {
+      await caches.default.put(claveFallos(k), new Response(JSON.stringify(arr.slice(-50)), { headers: { "Cache-Control": "max-age=900" } }));
+    } catch (e) {}
+  }
+}
+async function limpiarFallos(ip) {
+  loginFallos.delete("ip:" + ip);
+  try { await caches.default.delete(claveFallos("ip:" + ip)); } catch (e) {}
+}
 
 // ---------- Admin en el borde ----------
 const enc = new TextEncoder();
@@ -121,22 +188,23 @@ async function totpOk(secreto, codigo) {
     return false;
   } catch { return false; }
 }
-function firmarSesion(usuario, secret) {
-  const body = btoa(JSON.stringify({ u: usuario, exp: Math.floor(Date.now() / 1000) + 30 * 60 }));
-  // btoa directo falla con utf8 mínimo; los campos son ascii
-  return body + "." + toHex(new Uint8Array([])); // placeholder reemplazado abajo por async firmado
+const SESION_SEG = 20 * 60;
+const COOKIE = "__Host-centinela_admin";
+async function huella(req) {   // la sesión queda atada al navegador que inició sesión
+  const d = await crypto.subtle.digest("SHA-256", enc.encode(req.headers.get("User-Agent") || ""));
+  return toHex(d).slice(0, 16);
 }
-async function firmarAsync(usuario, secret) {
-  const cuerpo = btoa(JSON.stringify({ u: usuario, exp: Math.floor(Date.now() / 1000) + 30 * 60 }));
-  const k = await crypto.subtle.importKey("raw", enc.encode(secret || "centinela"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+async function firmarAsync(usuario, secret, req) {
+  const cuerpo = btoa(JSON.stringify({ u: usuario, ua: await huella(req), exp: Math.floor(Date.now() / 1000) + SESION_SEG }));
+  const k = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", k, enc.encode(cuerpo));
   return cuerpo + "." + toHex(sig);
 }
-async function sesionValida(cookieVal, secret) {
-  if (!cookieVal || !cookieVal.includes(".")) return false;
+async function sesionValida(cookieVal, secret, req) {
+  if (!secret || !cookieVal || !cookieVal.includes(".")) return false;
   try {
     const [cuerpo, firma] = cookieVal.split(".");
-    const k = await crypto.subtle.importKey("raw", enc.encode(secret || "centinela"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const k = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
     const sig = await crypto.subtle.sign("HMAC", k, enc.encode(cuerpo));
     const esp = toHex(sig);
     if (esp.length !== firma.length) return false;
@@ -144,7 +212,7 @@ async function sesionValida(cookieVal, secret) {
     for (let i = 0; i < esp.length; i += 1) diff |= esp.charCodeAt(i) ^ firma.charCodeAt(i);
     if (diff !== 0) return false;
     const obj = JSON.parse(atob(cuerpo));
-    return obj.exp > Math.floor(Date.now() / 1000);
+    return obj.exp > Math.floor(Date.now() / 1000) && obj.ua === await huella(req);
   } catch { return false; }
 }
 
@@ -153,14 +221,16 @@ const LOGIN_CSS = "body{font-family:system-ui,sans-serif;background:#0e1424;colo
 function loginHtml(error, totp) {
   const err = error ? `<div class=err>${error}</div>` : "";
   const totpHtml = totp ? `<label>Código (Aegis)</label><input name=codigo inputmode=numeric autocomplete=one-time-code required>` : "";
-  return `<!doctype html><html lang=es><head><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1"><title>Centinela · Panel</title><style>${LOGIN_CSS}</style></head><body><div class=card><h1>🛡️ Centinela · Panel</h1><p class=sub>Acceso solo para el equipo (profesor / admin)</p>${err}<form method=post action="/admin/login"><label>Usuario</label><input name=usuario autocomplete=username required autofocus><label>Contraseña</label><input name=clave type=password autocomplete=current-password required>${totpHtml}<button>Entrar</button></form><p class=count>Verificación: PBKDF2-HMAC-SHA256 · cookie firmada HMAC · bloqueo tras 5 intentos/IP · TOTP opcional (Aegis).</p></div></body></html>`;
+  return `<!doctype html><html lang=es><head><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1"><title>Centinela · Panel</title><style>${LOGIN_CSS}</style></head><body><div class=card><h1>🛡️ Centinela · Panel</h1><p class=sub>Acceso solo para el equipo (profesor / admin)</p>${err}<form method=post action="/admin/login"><label>Usuario</label><input name=usuario autocomplete=username required autofocus><label>Contraseña</label><input name=clave type=password autocomplete=current-password required>${totpHtml}<button>Entrar</button></form><p class=count>Verificación: PBKDF2-HMAC-SHA256 · sesión firmada HMAC de 20 min atada al navegador · bloqueo tras 5 intentos/IP · anti-CSRF · TOTP opcional (Aegis).</p></div></body></html>`;
 }
 
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function fmtNum(n){var m=n&&String(n).match(/^\+57(\d{3})(\d{3})(\d{4})$/);return m?"+57 "+m[1]+" "+m[2]+" "+m[3]:(n||"");}
 var CAT_PANEL={estafa:"Estafa",suplantacion:"Falso banco",cobranza:"Cobranza",telemarketing:"Telemarketing",wangiri:"Wangiri",extorsion:"Extorsion",encuesta:"Encuesta",otro:"Otro"};
 async function datosPanel(env){
-  for (const n of nodos(env)) {
+  const sanos = [], marcados = [];
+  for (const n of nodos(env)) { if (await estaCaido(n)) marcados.push(n); else sanos.push(n); }
+  for (const n of [...sanos, ...marcados]) {
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000);
       try {
@@ -196,56 +266,69 @@ function panelHtml(username, d) {
     + "<p class=count>Datos de /api/top y /api/stats (JE/JP), cargados por el gateway. Sin scripts en el navegador — compatible con el blindaje (CSP).</p></div></body></html>";
 }
 
+// Respuesta HTML del panel: nunca en caché, no indexable, y sin poder incrustarse.
+function htmlAdmin(cuerpo, status = 200, extra = {}) {
+  return new Response(cuerpo, { status, headers: { "content-type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", ...extra } });
+}
+function irA(destino, extra = {}) {
+  return new Response("", { status: 303, headers: { Location: destino, "Cache-Control": "no-store", ...extra } });
+}
+// CSRF: un POST al panel solo vale si viene de esta misma página (además de SameSite=Strict).
+function mismoOrigen(req, url) {
+  const o = req.headers.get("Origin");
+  if (o) return o === url.origin;
+  const r = req.headers.get("Referer");
+  return Boolean(r && r.startsWith(url.origin + "/"));
+}
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function handleAdmin(req, env, url) {
   const user = env.ADMIN_USER || "";
   const hash = env.ADMIN_HASH || "";
   const totp = env.ADMIN_TOTP || "";
-  const secret = env.SECRET_KEY || "centinela";
+  const secret = env.SECRET_KEY || "";
+  // Sin SECRET_KEY no hay forma segura de firmar la sesión: el panel no se abre.
+  if (!secret || secret.length < 32) return htmlAdmin(loginHtml("Panel deshabilitado: falta SECRET_KEY en el gateway.", false), 503);
   const cookies = parseCookies(req);
-  const ses = cookies["centinela_admin"] || "";
-  const valid = await sesionValida(ses, secret);
-  if (url.pathname === "/admin/salir") {
-    const r = new Response("", { status: 303, headers: { Location: "/admin/login", "Set-Cookie": "centinela_admin=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict; Secure" } });
-    return r;
-  }
+  const valid = await sesionValida(cookies[COOKIE] || "", secret, req);
+  const borrar = `${COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict; Secure`;
+  if (url.pathname === "/admin/salir") return irA("/admin/login", { "Set-Cookie": borrar });
+
   if (req.method === "POST" && url.pathname === "/admin/login") {
     const ct = req.headers.get("content-type") || "";
     if (!ct.includes("application/x-www-form-urlencoded")) return new Response("Unsupported", { status: 415 });
+    if (!mismoOrigen(req, url)) return new Response("Origen no permitido", { status: 403 });
+    const ip = req.headers.get("CF-Connecting-IP") || "0.0.0.0";
+    if (await loginBloqueado(ip)) {
+      return htmlAdmin(loginHtml("Demasiados intentos. Espera 15 minutos.", false), 429, { "Retry-After": "900" });
+    }
     const body = await req.text();
+    if (body.length > 1024) return new Response("Demasiado grande", { status: 413 });
     const params = new URLSearchParams(body);
     const usuario = params.get("usuario") || "";
     const clave = params.get("clave") || "";
     const codigo = params.get("codigo") || "";
-    const ip = req.headers.get("CF-Connecting-IP") || "0.0.0.0";
-    if (loginBloqueado(ip)) {
-      return new Response(loginHtml("Demasiados intentos. Espera 15 minutos.", false), { status: 429, headers: { "content-type": "text/html; charset=utf-8" } });
+    // Siempre se calcula el PBKDF2 (aunque el usuario no exista) para no filtrar por tiempo.
+    const pOk = await claveOk(clave, hash);
+    let uOk = usuario.length === user.length ? 1 : 0;
+    for (let i = 0; i < user.length; i += 1) uOk &= (usuario.charCodeAt(i) === user.charCodeAt(i)) ? 1 : 0;
+    const tOk = await totpOk(totp, codigo);
+    if (!(uOk && pOk && tOk)) {
+      await registrarFallo(ip);
+      await espera(700 + Math.floor(Math.random() * 600));   // frena la fuerza bruta
+      return htmlAdmin(loginHtml("Datos incorrectos.", Boolean(totp)), 401);
     }
-    const const1 = usuario.length === String(user).length;
-    let ok = false;
-    if (const1) {
-      let uOk = true; for (let i = 0; i < usuario.length; i += 1) uOk &= (usuario[i] === user[i]);
-      const pOk = await claveOk(clave, hash);
-      const tOk = await totpOk(totp, codigo);
-      ok = Boolean(uOk && pOk && tOk);
-    } else {
-      // tarea la misma: pbkdf2 para no filtrar tiempo user-enum
-      await claveOk(clave, hash);
-    }
-    if (!ok) {
-      registrarFallo(ip);
-      return new Response(loginHtml("Datos incorrectos.", Boolean(totp)), { status: 401, headers: { "content-type": "text/html; charset=utf-8" } });
-    }
-    limpiarFallos(ip);
-    const token = await firmarAsync(user, secret);
-    const r = new Response("", { status: 303, headers: { Location: "/admin", "Set-Cookie": `centinela_admin=${token}; HttpOnly; Path=/; Max-Age=1800; SameSite=Strict; Secure` } });
-    return r;
+    await limpiarFallos(ip);
+    const token = await firmarAsync(user, secret, req);
+    return irA("/admin", { "Set-Cookie": `${COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${SESION_SEG}; SameSite=Strict; Secure` });
   }
   if (url.pathname === "/admin/login") {
-    if (valid) return new Response("", { status: 303, headers: { Location: "/admin" } });
-    return new Response(loginHtml("", Boolean(totp)), { headers: { "content-type": "text/html; charset=utf-8" } });
+    if (valid) return irA("/admin");
+    return htmlAdmin(loginHtml("", Boolean(totp)));
   }
   if (req.method === "POST" && url.pathname === "/admin/control") {
-    if (!valid) return new Response("", { status: 303, headers: { Location: "/admin/login" } });
+    if (!valid) return irA("/admin/login");
+    if (!mismoOrigen(req, url)) return new Response("Origen no permitido", { status: 403 });
     const body = await req.text();
     const params = new URLSearchParams(body);
     const nodo = params.get("nodo") === "JP" ? "JP" : "JE";
@@ -256,39 +339,34 @@ async function handleAdmin(req, env, url) {
       try { await fetch(base + "/api/control?accion=" + accion, { method: "POST", headers: { "x-centinela-control": env.CONTROL_TOKEN || "" }, signal: c.signal }); }
       finally { clearTimeout(t); }
     } catch (e) {}
-    return new Response("", { status: 303, headers: { Location: "/admin" } });
+    // El cortacircuito se actualiza al instante para que el failover se vea sin esperar
+    const n = nodos(env).find((x) => x.nombre === nodo);
+    if (n) { if (accion === "pausar") await marcarCaido(n); else await marcarVivo(n); }
+    return irA("/admin");
   }
   // GET /admin
-  if (!valid) return new Response("", { status: 303, headers: { Location: "/admin/login" } });
+  if (!valid) return irA("/admin/login", cookies[COOKIE] ? { "Set-Cookie": borrar } : {});
   const d = await datosPanel(env);
-  return new Response(panelHtml(user, d), { headers: { "content-type": "text/html; charset=utf-8" } });
+  return htmlAdmin(panelHtml(user, d));
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
 
     const ip = req.headers.get("CF-Connecting-IP") || "0.0.0.0";
-    // Admin en el borde si hay credenciales (profesor): no depende de JE
-    const esAdmin = url.pathname === "/admin" || url.pathname === "/admin/login" || url.pathname === "/admin/salir" || url.pathname === "/admin/control";
-    if (esAdmin && env.ADMIN_USER && env.ADMIN_HASH) {
+    // El panel vive SOLO en el borde (no depende de JE/JP). Ninguna ruta /admin ni /login llega a los nodos,
+    // y /api/control solo lo usa el propio gateway (con CONTROL_TOKEN), nunca desde afuera.
+    if (url.pathname === "/login") return cors(irA("/admin/login"));
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
+      const conocida = ["/admin", "/admin/login", "/admin/salir", "/admin/control"].includes(url.pathname);
+      if (!conocida || !env.ADMIN_USER || !env.ADMIN_HASH) return cors(json({ error: "No encontrado" }, 404));
+      if (limitado("admin:" + ip, 30)) return cors(json({ error: "Demasiadas peticiones. Espera un minuto." }, 429, { "Retry-After": "60" }));
       return cors(await handleAdmin(req, env, url));
     }
-    // Alias amigable: /login -> /admin/login (si admin en borde, el anterior ya lo atendió; si no, proxeamos)
-    if (url.pathname === "/login") {
-      if (env.ADMIN_USER && env.ADMIN_HASH) {
-        // redirigir a /admin/login sin pasar por nodos
-        const u2 = new URL(req.url);
-        u2.pathname = "/admin/login";
-        const r = await handleAdmin(req, env, u2);
-        return cors(r);
-      }
-      url.pathname = "/admin/login";
-      return cors(await proxy(req, env, url));
-    }
-    const esApi = url.pathname.startsWith("/api/") || url.pathname === "/health"
-      || url.pathname.startsWith("/admin");
+    if (url.pathname === "/api/control") return cors(json({ error: "No encontrado" }, 404));
+    const esApi = url.pathname.startsWith("/api/") || url.pathname === "/health";
 
     if (esApi) {
       const esChat = url.pathname.startsWith("/api/chat");
@@ -301,7 +379,7 @@ export default {
     }
 
     if (url.pathname === "/gateway/estado") return cors(json(await estado(env)));
-    if (esApi) return cors(await proxy(req, env, url));
+    if (esApi) return cors(await proxy(req, env, url, ctx));
     if (env.ASSETS) return cors(await env.ASSETS.fetch(req));
     return cors(json({ servicio: "Centinela gateway", rutas: ["/api/*", "/health", "/gateway/estado"] }));
   },
@@ -324,19 +402,20 @@ async function conTimeout(recurso, opciones, ms) {
   }
 }
 
-async function vivo(n) {
+async function vivo(n, ms = TIMEOUT_MS) {
   const t0 = Date.now();
   try {
-    const r = await conTimeout(n.base + "/health", {}, TIMEOUT_MS);
+    const r = await conTimeout(n.base + "/health", {}, ms);
     if (r.status >= 500) throw new Error("HTTP " + r.status);
-    return { nombre: n.nombre, online: true, latencia_ms: Date.now() - t0, health: await r.json() };
+    const health = await r.json();
+    await marcarVivo(n);
+    return { nombre: n.nombre, online: true, latencia_ms: Date.now() - t0, health };
   } catch (e) {
     return { nombre: n.nombre, online: false, latencia_ms: Date.now() - t0, error: motivo(e) };
   }
 }
 
-async function proxy(req, env, url) {
-  const lista = nodos(env);
+async function proxy(req, env, url, ctx) {
   const esLento = url.pathname.startsWith("/api/chat") || url.pathname.startsWith("/api/bot");
 
   let cuerpo;
@@ -348,10 +427,23 @@ async function proxy(req, env, url) {
   }
   const fallas = [];
 
-  for (const n of lista) {
-    if (esLento) {
-      const v = await vivo(n);
-      if (!v.online) { fallas.push(`${n.nombre}:${v.error}`); continue; }
+  // Orden: primero los nodos sanos; los marcados caídos van al final (solo si todo lo demás falla)
+  // y se sondean en segundo plano para volver a usarlos apenas revivan.
+  const sanos = [], marcados = [];
+  for (const n of nodos(env)) {
+    if (await estaCaido(n)) {
+      marcados.push(n);
+      fallas.push(`${n.nombre}:caido`);
+      if (ctx) ctx.waitUntil(sondear(n));
+    } else sanos.push(n);
+  }
+
+  for (const n of [...sanos, ...marcados]) {
+    // La IA puede tardar hasta 90 s: antes de mandarle el chat se confirma (rápido) que el nodo vive,
+    // salvo que haya respondido bien hace poco.
+    if (esLento && Date.now() - (vivosOk.get(n.nombre) || 0) > VIVO_RECIENTE_MS) {
+      const v = await vivo(n, TIMEOUT_SALUD_MS);
+      if (!v.online) { await marcarCaido(n); fallas.push(`${n.nombre}:${v.error}`); continue; }
     }
     try {
       const h = new Headers(req.headers);
@@ -360,12 +452,14 @@ async function proxy(req, env, url) {
       h.set("X-Centinela-Gateway", "1");
       const r = await conTimeout(n.base + url.pathname + url.search,
         { method: req.method, headers: h, body: cuerpo }, esLento ? TIMEOUT_CHAT_MS : TIMEOUT_MS);
-      if (r.status >= 500) { fallas.push(`${n.nombre}:HTTP ${r.status}`); continue; }
+      if (r.status >= 500) { await marcarCaido(n); fallas.push(`${n.nombre}:HTTP ${r.status}`); continue; }
+      await marcarVivo(n);
       const resp = new Response(r.body, r);
       resp.headers.set("X-Centinela-Nodo", n.nombre);
       if (fallas.length) resp.headers.set("X-Centinela-Failover", fallas.join(" | "));
       return resp;
     } catch (e) {
+      await marcarCaido(n);
       fallas.push(`${n.nombre}:${motivo(e)}`);
     }
   }
@@ -373,7 +467,7 @@ async function proxy(req, env, url) {
 }
 
 async function estado(env) {
-  const res = await Promise.all(nodos(env).map(vivo));
+  const res = await Promise.all(nodos(env).map((n) => vivo(n, 4000)));
   const activo = res.find((r) => r.online);
   return { activo: activo ? activo.nombre : null, nodos: res, hora: new Date().toISOString() };
 }

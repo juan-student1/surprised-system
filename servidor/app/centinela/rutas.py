@@ -1,5 +1,5 @@
 """CENTINELA · rutas HTTP (API pública + bot + llamadas reales)."""
-import os, re
+import json, os, re, unicodedata
 from datetime import datetime, timezone
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
@@ -65,12 +65,42 @@ def respuesta_reglas(fichas: list, st: dict | None) -> str:
         base += f" Hoy llevo {st['numeros']} números vigilados y {st['reportes_24h']} reportes en 24 h."
     return base
 
+# Palabras que indican que la pregunta SÍ es del tema (sin tildes, en minúscula).
+# Si no hay ninguna ni un número, se responde al instante sin gastar la IA.
+TEMA = ("llam", "telef", "celular", "movil", "numero", "estaf", "fraud", "spam", "banco", "bancolombia",
+        "davivienda", "nequi", "daviplata", "bbva", "clave", "contrasen", "codigo", "sms", "mensaje", "whatsapp",
+        "wangiri", "extors", "amenaz", "cobr", "deuda", "encuesta", "telemarket", "venta", "oferta", "premio",
+        "sorteo", "gan", "secuestr", "familiar", "hijo", "plata", "dinero", "transfer", "consign", "cuenta",
+        "tarjeta", "dato", "robo", "rob", "hacke", "suplant", "policia", "fiscal", "dian", "sospech", "peligr",
+        "seguro", "bloque", "report", "centinela", "riesgo", "contest", "colg", "oculto", "privado",
+        "internacional", "prefijo", "marc", "devolv", "timbr", "scam", "phishing", "smishing", "vishing", "enga",
+        "operador", "claro", "movistar", "tigo", "wom", "servidor", "nodo", "estado", "chantaj", "pagar", "pago",
+        "verific", "confi", "identific", "victima", "denunci", "caer", "cai", "ayud", "proteg", "cuid", "estafador")
+SALUDOS = ("hola", "buenas", "buenos dias", "buenas tardes", "buenas noches", "hey", "gracias", "que eres",
+           "quien eres", "que haces", "como funciona", "como te uso", "menu", "ayuda")
+FUERA_DE_TEMA = "Solo puedo ayudarte con Centinela y la identificación de llamadas."
+
+def _plano(t: str) -> str:
+    t = unicodedata.normalize("NFD", t.lower())
+    return "".join(ch for ch in t if unicodedata.category(ch) != "Mn")
+
 def chat_logic(c: Chat):
     nums = []
     for m in RE_NUM.findall(c.mensaje)[:3]:
         try: nums.append(normalizar(m))
         except HTTPException: pass
     fichas = [ficha(n) for n in nums]
+    plano = _plano(c.mensaje).strip()
+    sin_numeros = RE_NUM.sub(" ", plano)
+    palabras = re.findall(r"[a-z]+", sin_numeros)
+    # 1) Solo números → ficha al instante (no hace falta la IA)
+    if fichas and len(palabras) <= 2:
+        return {"respuesta": respuesta_reglas(fichas, None), "fuente": "reglas", "nodo": NODO, "numeros": fichas}
+    # 2) Fuera de tema → negativa al instante (la IA pequeña a veces responde igual; aquí no se le pregunta)
+    if not fichas and not any(k in sin_numeros for k in TEMA):
+        if any(plano.startswith(s) or plano == s for s in SALUDOS):
+            return {"respuesta": AYUDA, "fuente": "reglas", "nodo": NODO, "numeros": []}
+        return {"respuesta": FUERA_DE_TEMA, "fuente": "reglas", "nodo": NODO, "numeros": []}
     try: st = q("""select (select count(*) from numeros) numeros, (select count(*) from reportes where creado > now() - interval '24 hours') reportes_24h""", uno=True)
     except Exception: st = None
     if ollama_disponible():
@@ -81,12 +111,11 @@ def chat_logic(c: Chat):
                       "Tu ÚNICO tema son las llamadas, el spam, las estafas telefónicas y este sistema. "
                       "Responde en español, cálido y breve (máximo 4 líneas). Usa SOLO los datos del CONTEXTO "
                       "para hablar de números; nunca inventes reportes ni cifras. Si el riesgo es alto, "
-                      "aconseja no contestar y bloquear. "
-                      "Si te preguntan cualquier cosa que NO tenga que ver con llamadas o estafas telefónicas "
-                      "(matemáticas, código, chistes, otros temas), responde exactamente: "
-                      "'Solo puedo ayudarte con Centinela y la identificación de llamadas.' "
-                      "Nunca pidas datos personales.")
-            txt = ollama_chat(system, f"CONTEXTO: {contexto}\n\nUSUARIO: {c.mensaje}", temperatura=0.3, num_predict=200)
+                      "aconseja no contestar y bloquear. La pregunta del usuario SÍ es de tu tema: respóndela "
+                      "directamente, sin decir que no puedes ayudar. Nunca pidas datos personales.")
+            txt = ollama_chat(system, f"CONTEXTO: {contexto}\n\nUSUARIO: {c.mensaje}", temperatura=0.3, num_predict=160)
+            if txt.startswith(FUERA_DE_TEMA) and len(txt) > len(FUERA_DE_TEMA) + 5:
+                txt = txt[len(FUERA_DE_TEMA):].strip()   # el modelo pequeño a veces antepone la negativa
             return {"respuesta": txt, "fuente": "ollama", "modelo": os.getenv("OLLAMA_MODEL", "qwen2.5:7b"), "nodo": NODO, "numeros": fichas}
         except Exception as e: log.warning("Ollama falló, respondo con reglas: %s", e)
     return {"respuesta": respuesta_reglas(fichas, st), "fuente": "reglas", "nodo": NODO, "numeros": fichas}
@@ -147,7 +176,14 @@ def registrar(app: FastAPI):
         else:
             f = ficha(normalizar(l.numero)); aviso = "📞 Te está llamando:\n" + texto_ficha(f)
         try: q("""insert into llamadas (numero, dispositivo, score, nivel, nodo) values (%s,%s,%s,%s,%s)""", (f["numero"], l.dispositivo, f.get("score"), f.get("nivel"), NODO))
-        except Exception as e: log.warning("No se pudo guardar la llamada: %s", e)
+        except Exception as e:
+            # Sin Supabase la llamada igual debe verse en la web: se guarda en este nodo
+            log.warning("No se pudo guardar la llamada en la BD, la guardo local: %s", e)
+            try:
+                fila = {"numero": f["numero"], "dispositivo": l.dispositivo, "score": f.get("score"), "nivel": f.get("nivel"), "nodo": NODO,
+                        "pais": f.get("pais"), "total_reportes": f.get("total_reportes"), "categoria_principal": f.get("categoria_principal"), "resumen_ia": f.get("resumen_ia")}
+                with local() as c: c.execute("insert into llamadas_local (data, creado) values (?,?)", (json.dumps(fila, default=str), datetime.now(timezone.utc).isoformat()))
+            except Exception as e2: log.warning("Tampoco se pudo guardar local: %s", e2)
         bg.add_task(telegram_enviar, aviso)
         corto = {"alto": "🔴 NO CONTESTES · riesgo alto", "medio": "🟠 Cuidado · riesgo medio"}.get(f.get("nivel"), "🟢 Riesgo bajo")
         if request.query_params.get("formato") == "texto":
@@ -157,7 +193,16 @@ def registrar(app: FastAPI):
 
     @app.get("/api/llamadas")
     def llamadas(limite: int = 5):
-        filas = q("""select l.id, l.numero, l.dispositivo, l.score, l.nivel, l.nodo, l.creado, n.pais, n.total_reportes, n.categoria_principal, n.resumen_ia from llamadas l left join numeros n using (numero) order by l.creado desc limit %s""", (min(limite, 20),), todos=True)
+        limite = max(1, min(limite, 20))
+        try: filas = q("""select l.id, l.numero, l.dispositivo, l.score, l.nivel, l.nodo, l.creado, n.pais, n.total_reportes, n.categoria_principal, n.resumen_ia from llamadas l left join numeros n using (numero) order by l.creado desc limit %s""", (limite,), todos=True)
+        except Exception as e: log.warning("Llamadas sin BD, uso las locales: %s", e); filas = []
+        # + las que este nodo guardó local (últimos 10 min) cuando Supabase no respondía
+        try:
+            with local() as c:
+                for r in c.execute("select id, data, creado from llamadas_local where creado > ? order by id desc limit ?", (datetime.fromtimestamp(datetime.now(timezone.utc).timestamp() - 600, timezone.utc).isoformat(), limite)).fetchall():
+                    filas.append({**json.loads(r["data"]), "id": f"{NODO}-{r['id']}", "creado": datetime.fromisoformat(r["creado"])})
+        except Exception as e: log.warning("No pude leer llamadas locales: %s", e)
+        filas = sorted(filas, key=lambda f: f["creado"], reverse=True)[:limite]
         for f in filas:
             if not f["numero"]: f["numero"] = "Número oculto"
             elif (f["score"] or 0) < 25 and not f["total_reportes"]: f["numero"] = enmascarar(f["numero"])
@@ -203,6 +248,14 @@ def registrar(app: FastAPI):
         return {"respuesta": (f"☀️ Buenos días. Así va Centinela:\n• {st['reportes_24h']} reportes en las últimas 24 h\n• {st['numeros']} números vigilados, {st['alto_riesgo']} de riesgo alto\n\n🔝 Más peligrosos:\n{tope or 'Sin datos'}\n\n💡 {consejo}")}
 
     # --- Panel admin autenticado (lo que pide el profesor) ---
+    # Por seguridad el panel vive en el gateway (Cloudflare). En el nodo queda APAGADO salvo ADMIN_EN_NODO=1,
+    # así nadie puede atacar el login entrando directo por el Funnel de JE/JP.
+    @app.middleware("http")
+    async def _sin_admin_en_nodo(request: Request, call_next):
+        if request.url.path.startswith("/admin") and os.getenv("ADMIN_EN_NODO", "0") != "1":
+            return PlainTextResponse("No encontrado", status_code=404)
+        return await call_next(request)
+
     @app.get("/admin", response_class=authmod.HTMLResponse)
     def admin_panel(request: Request): return authmod.admin_panel(request, stats_completas, formato, CAT_TXT)
 

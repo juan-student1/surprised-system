@@ -142,4 +142,6 @@ Para deshacerlo: `sudo rm /etc/systemd/logind.conf.d/centinela-ia.conf && sudo s
 | La IA tarda mucho (más de ~20 s) | Pasar al modelo liviano: `ollama pull qwen2.5:3b && sed 's/^FROM .*/FROM qwen2.5:3b/' servidor/ia/Modelfile > /tmp/M && ollama create centinela -f /tmp/M` |
 | El bot no responde | n8n → *Executions*: ¿llegó el mensaje? Si no, revisa el Funnel (`sudo tailscale funnel status`) y que el flujo esté *Active* |
 | "Bad webhook" al activar | El Funnel no publica `/webhook`: vuelve a correr `bash ia/instalar_n8n.sh` |
-| Puerto 5678 ocupado | Normal si tienes otro n8n: el script usa el siguiente libre y lo muestra al final |
+| Puerto 5678 ocupado | Normal si tienes otro n8n: el script usa el siguiente libre (en el Lenovo de Juan es el **5679**) |
+| El bot no responde y `getWebhookInfo` dice *Connection timed out* | El dominio del Funnel no es público: `sudo bash ia/reparar_lenovo.sh` |
+| `configurar_ia.sh` dice "Ollama no corre como servicio" | Error viejo del script (ya corregido): `sudo bash ia/reparar_lenovo.sh` aplica los límites |
