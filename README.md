@@ -15,11 +15,12 @@ Usuarios → Cloudflare Worker (failover) → JE principal (VM Google Cloud) ─
 2. [`docs/04_NUBE.md`](docs/04_NUBE.md) — Supabase, GitHub, Cloudflare
 3. [`docs/01_JE_SERVIDOR_PRINCIPAL.md`](docs/01_JE_SERVIDOR_PRINCIPAL.md)
 4. [`docs/02_JP_SERVIDOR_RESPALDO.md`](docs/02_JP_SERVIDOR_RESPALDO.md)
-5. [`docs/03_PC_PERSONAL_IA.md`](docs/03_PC_PERSONAL_IA.md)
+5. [`docs/03_PC_PERSONAL_IA.md`](docs/03_PC_PERSONAL_IA.md) → ahora [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md)
 6. [`docs/05_PRUEBAS.md`](docs/05_PRUEBAS.md) — protocolo de pruebas y auditoría
 7. [`docs/06_TELEGRAM_N8N.md`](docs/06_TELEGRAM_N8N.md) — bot de Telegram y automatizaciones n8n
 8. [`docs/07_LLAMADAS_REALES.md`](docs/07_LLAMADAS_REALES.md) — detectar llamadas reales (Android / iPhone)
 9. [`docs/08_CHECKLIST_FINAL.md`](docs/08_CHECKLIST_FINAL.md) — integrar a JP y guion de sustentación
+10. [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) — IA en el Lenovo: Ollama + n8n + bot (paso a paso)
 
 **En vivo:** https://centinela.juan-gallego-sec.workers.dev
 
