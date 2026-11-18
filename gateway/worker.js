@@ -274,9 +274,14 @@ function irA(destino, extra = {}) {
   return new Response("", { status: 303, headers: { Location: destino, "Cache-Control": "no-store", ...extra } });
 }
 // CSRF: un POST al panel solo vale si viene de esta misma página (además de SameSite=Strict).
+// 1º Sec-Fetch-Site (lo pone el navegador, la página no lo puede falsificar).
+// Ojo: con Referrer-Policy no-referrer el navegador manda "Origin: null" en los POST de formulario,
+// por eso la política es same-origin y "null" nunca cuenta como origen válido.
 function mismoOrigen(req, url) {
+  const sfs = req.headers.get("Sec-Fetch-Site");
+  if (sfs) return sfs === "same-origin";
   const o = req.headers.get("Origin");
-  if (o) return o === url.origin;
+  if (o && o !== "null") return o === url.origin;
   const r = req.headers.get("Referer");
   return Boolean(r && r.startsWith(url.origin + "/"));
 }
@@ -493,7 +498,7 @@ function cors(resp) {
   r.headers.set("Access-Control-Expose-Headers", "X-Centinela-Nodo, X-Centinela-Failover");
   r.headers.set("X-Content-Type-Options", "nosniff");
   r.headers.set("X-Frame-Options", "DENY");
-  r.headers.set("Referrer-Policy", "no-referrer");
+  r.headers.set("Referrer-Policy", "same-origin");
   r.headers.set("Strict-Transport-Security", "max-age=31536000");
   r.headers.set("Content-Security-Policy",
     "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
