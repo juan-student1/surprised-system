@@ -26,6 +26,9 @@ azul "Llave de Tailscale para Cloud Run (para llegar a la IA del Lenovo)"
 echo "  Créala en https://login.tailscale.com/admin/settings/keys → Generate auth key:"
 echo "  Reusable ✔  Ephemeral ✔  Pre-approved ✔  Expiración 90 días"
 read -rsp "  Pega la llave tskey-auth-... (Enter = sin IA, el chat responde por reglas): " TS; echo
+TS="$(printf '%s' "$TS" | tr -d '[:space:]')"
+if [[ -n "$TS" && "$TS" != tskey-auth-* ]]; then
+  echo "❌ Eso no es una auth key (debe empezar por tskey-auth-; las tskey-api- no sirven)"; exit 1; fi
 if [[ -n "$TS" ]]; then guardar_secreto centinela-ts-authkey "$TS" "$SA_RUN"; fi
 unset TS
 
