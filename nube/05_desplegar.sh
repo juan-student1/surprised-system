@@ -20,11 +20,12 @@ existe_secreto centinela-ts-authkey && VARS+="|OLLAMA_PROXY=http://localhost:105
 
 azul "Desplegando $SERVICIO en $REGION (la primera vez tarda ~4 min)"
 # max-instances=1: el modo mantenimiento (demo de failover) vive en memoria de UNA instancia.
+# --set-env-vars usa el separador | porque los correos de las cuentas de servicio llevan @.
 # min-instances=0 + facturación por petición = casi gratis; Scheduler la mantiene caliente.
 gcloud run deploy "$SERVICIO" --source "$REPO/servidor/app" --region "$REGION" --quiet \
   --service-account "$SA_RUN" --allow-unauthenticated \
   --add-cloudsql-instances "$CONEXION" \
-  --set-secrets "$SECRETOS" --set-env-vars "^|^$VARS"   # separador | (los correos de las cuentas llevan @) \
+  --set-secrets "$SECRETOS" --set-env-vars "^|^$VARS" \
   --execution-environment gen2 --cpu 1 --memory 512Mi --cpu-boost \
   --min-instances 0 --max-instances 1 --concurrency 40 --timeout 120 \
   --labels app=centinela
