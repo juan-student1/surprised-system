@@ -3,7 +3,8 @@ main = "worker.js"
 compatibility_date = "2025-10-01"
 
 [vars]
-NODO_PRINCIPAL = "https://centinela-je.tailaf5c0b.ts.net"
+# JE en Cloud Run desde 2026-11-18 (antes: VM e2-micro por Tailscale Funnel, https://centinela-je.tailaf5c0b.ts.net)
+NODO_PRINCIPAL = "https://centinela-je-6osemfnwqa-ue.a.run.app"
 NODO_RESPALDO  = "https://centinela-jp.tailaf5c0b.ts.net"
 
 # La web se publica junto al gateway (un solo link para todo)
