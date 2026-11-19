@@ -5,6 +5,8 @@
 set -euo pipefail
 PROYECTO="${PROYECTO:-$(gcloud config get-value project 2>/dev/null)}"
 [[ -n "$PROYECTO" ]] || { echo "❌ Primero: gcloud config set project ID_DEL_PROYECTO"; exit 1; }
+gcloud auth print-access-token >/dev/null 2>&1 || {
+  echo "❌ La sesión de gcloud se cerró (Cloud Shell se reconectó). Corre:  gcloud auth login"; exit 1; }
 REGION=us-east1                 # misma región de la VM, del nivel gratis y cerca de Colombia
 ZONA_VM=us-east1-b
 VM=centinela-je                 # VM vieja (se borra al final con 99_borrar_vm.sh)
