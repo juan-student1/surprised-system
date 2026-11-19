@@ -67,16 +67,35 @@ def vaciar_bandeja() -> int:
     if enviados: evento("sincronizacion", f"{enviados} reportes pendientes enviados a la nube")
     return enviados
 
+_host = {"ip": None, "nombre": None}
+
+def latir_una_vez() -> bool:
+    """Un latido: guarda CPU/RAM/versión de este nodo en la tabla `nodos`. Devuelve si la BD respondió."""
+    import socket
+    if _host["nombre"] is None:
+        _host.update(ip=ip_tailscale(), nombre=socket.gethostname())
+    m = metricas()
+    try:
+        q("""insert into nodos (nombre, rol, ip_tailscale, hostname, cpu, ram, disco, temp, version, iniciado, ultimo_latido) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now()) on conflict (nombre) do update set rol=excluded.rol, ip_tailscale=excluded.ip_tailscale, hostname=excluded.hostname, cpu=excluded.cpu, ram=excluded.ram, disco=excluded.disco, temp=excluded.temp, version=excluded.version, iniciado=excluded.iniciado, ultimo_latido=now()""", (NODO, ROL, _host["ip"], _host["nombre"], m["cpu"], m["ram"], m["disco"], m["temp"], VERSION, INICIO))
+        marcar_db(True); return True
+    except Exception as e:
+        marcar_db(False); log.warning("Latido no enviado (BD caída?): %s", e); return False
+
+def tareas_programadas() -> dict:
+    """Lo que en un servidor normal hacen los 3 bucles de fondo, en una sola pasada.
+    En Cloud Run lo dispara Cloud Scheduler cada minuto (POST /tareas/latido)."""
+    db = latir_una_vez()
+    enviados = 0
+    if db:
+        try: enviados = vaciar_bandeja()
+        except Exception as e: log.warning("Sincronización falló: %s", e)
+    return {"db": db, "sincronizados": enviados, "ollama": ollama_disponible(True)}
+
 async def latido():
-    import psutil, socket
+    import psutil
     psutil.cpu_percent(interval=None)
-    ip = ip_tailscale(); host = socket.gethostname()
     while True:
-        m = metricas()
-        try:
-            await asyncio.to_thread(q, """insert into nodos (nombre, rol, ip_tailscale, hostname, cpu, ram, disco, temp, version, iniciado, ultimo_latido) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now()) on conflict (nombre) do update set rol=excluded.rol, ip_tailscale=excluded.ip_tailscale, hostname=excluded.hostname, cpu=excluded.cpu, ram=excluded.ram, disco=excluded.disco, temp=excluded.temp, version=excluded.version, iniciado=excluded.iniciado, ultimo_latido=now()""", (NODO, ROL, ip, host, m["cpu"], m["ram"], m["disco"], m["temp"], VERSION, INICIO))
-            marcar_db(True)
-        except Exception as e: marcar_db(False); log.warning("Latido no enviado (Supabase caída?): %s", e)
+        await asyncio.to_thread(latir_una_vez)
         await asyncio.sleep(LATIDO_SEG)
 
 async def vigilar_ia():

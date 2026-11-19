@@ -2,6 +2,12 @@
 
 > El respaldo es **idéntico** al principal: misma API, misma base de datos. El Gateway de Cloudflare lo usa automáticamente cuando JE no responde.
 
+> **Desde 2026‑11‑18 la base de datos está en Cloud SQL.** Después de instalar el nodo, JP se conecta con el Cloud SQL Auth Proxy (Juan le pasa la llave `centinela-jp.json` y la clave de `centinela_jp` por privado):
+> ```bash
+> sudo bash servidor/conectar_cloudsql.sh ~/centinela-jp.json PROYECTO:us-east1:centinela-db
+> ```
+> Detalle en [`15_CLOUD_RUN_CLOUD_SQL_IAM.md`](15_CLOUD_RUN_CLOUD_SQL_IAM.md) §3.
+
 ## Parte A · Lo que hace JE (Juan) antes
 1. Entrar a <https://login.tailscale.com/admin/settings/keys> → **Generate auth key**.
    - Reusable: **no** · Ephemeral: **no** · Pre‑approved: **sí** · Expiración: 7 días.

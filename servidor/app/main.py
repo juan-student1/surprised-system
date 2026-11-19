@@ -21,9 +21,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, log, MANTENIMIENTO
+from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, log, MANTENIMIENTO, EN_CLOUD_RUN
 from centinela.db import pool, local, evento
-from centinela.servicios import latido, sincronizador, vigilar_ia, _exceso
+from centinela.servicios import latido, sincronizador, vigilar_ia, latir_una_vez, _exceso
 from centinela.utilidades import ip_cliente
 from centinela import rutas
 
@@ -35,11 +35,16 @@ async def lifespan(app: FastAPI):
     local().close()
     await __import__("asyncio").to_thread(evento, "arranque", f"Nodo {NODO} ({os.getenv('NODO_ROL', 'principal')}) v{VERSION} iniciado")
     import asyncio
-    tareas = [
-        asyncio.create_task(latido()),
-        asyncio.create_task(sincronizador()),
-        asyncio.create_task(vigilar_ia()),
-    ]
+    if EN_CLOUD_RUN:
+        # Cloud Run: sin bucles (la CPU se congela entre peticiones). Un latido al arrancar
+        # y el resto lo dispara Cloud Scheduler cada minuto en /tareas/latido.
+        tareas = [asyncio.create_task(asyncio.to_thread(latir_una_vez))]
+    else:
+        tareas = [
+            asyncio.create_task(latido()),
+            asyncio.create_task(sincronizador()),
+            asyncio.create_task(vigilar_ia()),
+        ]
     yield
     for t in tareas:
         t.cancel()
@@ -62,13 +67,13 @@ app.add_middleware(
 async def guardia(request: Request, call_next):
     # Modo mantenimiento: el panel puede "detener" este nodo para demostrar el failover.
     # Devuelve 503 en todo (menos /api/control, para poder reactivarlo) -> el gateway salta al otro nodo.
-    if MANTENIMIENTO["on"] and request.url.path != "/api/control":
+    if MANTENIMIENTO["on"] and request.url.path not in ("/api/control", "/tareas/latido"):
         r = Response('{"error":"Nodo en mantenimiento","nodo":"' + NODO + '"}', status_code=503, media_type="application/json")
         r.headers["X-Centinela-Nodo"] = NODO
         return r
     # Escudo por IP en el propio nodo: si el gateway cae o atacan por el Funnel directo,
     # ninguna IP puede inundar la API. /health, /ping y / quedan libres (los usa el clúster).
-    if request.url.path not in ("/health", "/ping", "/"):
+    if request.url.path not in ("/health", "/ping", "/", "/tareas/latido"):
         if _exceso("global", ip_cliente(request), LIMITE_GLOBAL, 60):
             r = Response('{"error":"Demasiadas peticiones"}', status_code=429, media_type="application/json")
             r.headers["Retry-After"] = "60"

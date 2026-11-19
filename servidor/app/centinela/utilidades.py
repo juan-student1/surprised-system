@@ -13,7 +13,7 @@ import subprocess
 import psutil
 from fastapi import HTTPException, Request
 
-from .config import PAISES, PREFIJOS_RIESGO, CAT_TXT, EMOJI, SAL, GATEWAY_SECRET
+from .config import PAISES, PREFIJOS_RIESGO, CAT_TXT, EMOJI, SAL, GATEWAY_SECRET, TS_SOCKET
 
 
 def normalizar(raw: str) -> str:
@@ -86,8 +86,9 @@ def hash_reportero(valor: str) -> str:
 
 def ip_tailscale() -> str:
     try:
+        cmd = ["tailscale"] + (["--socket", TS_SOCKET] if TS_SOCKET else []) + ["ip", "-4"]
         return subprocess.run(
-            ["tailscale", "ip", "-4"], capture_output=True, text=True, timeout=3
+            cmd, capture_output=True, text=True, timeout=3
         ).stdout.strip().splitlines()[0]
     except Exception:
         return ""

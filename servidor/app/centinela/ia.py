@@ -1,7 +1,7 @@
 """CENTINELA · capa de IA local (Ollama)."""
 import json, os, time
 import httpx
-from .config import OLLAMA_URL, OLLAMA_MODEL, CATEGORIAS, log
+from .config import OLLAMA_URL, OLLAMA_MODEL, OLLAMA_PROXY, CATEGORIAS, log
 from .db import pool, recalcular
 
 _ollama_estado = {"ok": False, "t": 0.0}
@@ -9,7 +9,7 @@ _ollama_estado = {"ok": False, "t": 0.0}
 def ollama_disponible(forzar=False) -> bool:
     if not forzar and time.time() - _ollama_estado["t"] < 60:
         return _ollama_estado["ok"]
-    try: ok = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=2).status_code == 200
+    try: ok = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=3 if OLLAMA_PROXY else 2, proxy=OLLAMA_PROXY).status_code == 200
     except Exception: ok = False
     _ollama_estado.update(ok=ok, t=time.time())
     return ok
@@ -18,7 +18,7 @@ def ollama_chat(system: str, usuario: str, json_mode=False, timeout=90, temperat
     opciones = {"temperature": temperatura, "num_predict": num_predict, "num_ctx": int(os.getenv("OLLAMA_NUM_CTX", "1024"))}
     cuerpo = {"model": OLLAMA_MODEL, "stream": False, "options": opciones, "keep_alive": os.getenv("OLLAMA_KEEP_ALIVE", "10m"), "messages": [{"role": "system", "content": system}, {"role": "user", "content": usuario}]}
     if json_mode: cuerpo["format"] = "json"
-    r = httpx.post(f"{OLLAMA_URL}/api/chat", json=cuerpo, timeout=timeout)
+    r = httpx.post(f"{OLLAMA_URL}/api/chat", json=cuerpo, timeout=timeout, proxy=OLLAMA_PROXY)
     r.raise_for_status()
     return r.json()["message"]["content"].strip()
 

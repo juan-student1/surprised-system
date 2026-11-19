@@ -3,7 +3,7 @@ import json, sqlite3, time
 from datetime import datetime, timezone
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
-from .config import DATABASE_URL, LOCAL_DB, LATIDO_SEG, POOL_MIN, NODO, log
+from .config import DATABASE_URL, LOCAL_DB, LATIDO_SEG, POOL_MIN, NODO, UMBRAL_ONLINE_SEG, log
 from .utilidades import pais_de, calcular_score, nivel_de
 
 pool = ConnectionPool(DATABASE_URL, min_size=POOL_MIN, max_size=4, max_idle=60, open=False,
@@ -110,6 +110,6 @@ def cluster_data():
     # Solo columnas públicas: nunca la IP de Tailscale ni el hostname del equipo
     nodos = q("""select nombre, rol, cpu, ram, disco, temp, version, iniciado, ultimo_latido,
                         (ultimo_latido > now() - make_interval(secs => %s)) as online
-                 from nodos order by nombre""", (LATIDO_SEG * 3,), todos=True)
+                 from nodos order by nombre""", (UMBRAL_ONLINE_SEG,), todos=True)
     ev = q("select nodo, tipo, detalle, creado from eventos order by creado desc limit 15", todos=True)
     return {"nodos": nodos, "eventos": ev}

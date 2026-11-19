@@ -1,5 +1,7 @@
 # 01 · JE — Servidor principal (VM e2‑micro en Google Cloud)
 
+> ⚠️ **Histórico.** Desde 2026‑11‑18 JE corre en **Cloud Run** con la BD en **Cloud SQL**: ver [`15_CLOUD_RUN_CLOUD_SQL_IAM.md`](15_CLOUD_RUN_CLOUD_SQL_IAM.md). Esta guía queda como registro y sirve hasta borrar la VM (`nube/99_borrar_vm.sh`). El paso 2 (alerta de presupuesto) sigue vigente.
+
 > Desde 2026‑11‑17 el nodo JE corre en **Google Cloud** (crédito del curso) y no en el PC de mesa.
 > **Antes de empezar:** proyecto en Supabase con `schema.sql` (`04_NUBE.md`) y la cadena *Session pooler* a mano.
 > La guía para Mint/Arch en un PC físico sigue sirviendo para JP: `02_JP_SERVIDOR_RESPALDO.md`.

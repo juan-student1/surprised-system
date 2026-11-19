@@ -5,11 +5,11 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, log
+from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, TAREAS_SA, TAREAS_AUDIENCIA, log
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
 from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha
 from .ia import ollama_disponible, ollama_chat
-from .servicios import registrar_reporte, telegram_enviar, _exceso
+from .servicios import registrar_reporte, telegram_enviar, _exceso, tareas_programadas
 from . import auth as authmod
 
 RE_NUM = re.compile(r"(?:\+|00)?\d[\d\s\-().]{5,17}\d")
@@ -131,6 +131,22 @@ def registrar(app: FastAPI):
     def health():
         with local() as c: pend = c.execute("select count(*) n from pendientes").fetchone()["n"]
         return {"ok": True, "nodo": NODO, "rol": ROL, "version": VERSION, "db": db_ok(), "ollama": ollama_disponible(), "pendientes": pend, "uptime_seg": int((datetime.now(timezone.utc) - INICIO).total_seconds()), **metricas()}
+
+    @app.post("/tareas/latido")
+    def tareas(request: Request):
+        # Solo Cloud Scheduler: trae un token OIDC firmado por Google para la cuenta de servicio
+        # centinela-tareas. Se verifica la firma, la audiencia y el correo (IAM, no una clave compartida).
+        if not TAREAS_SA: raise HTTPException(404, "No encontrado")
+        token = (request.headers.get("authorization") or "").removeprefix("Bearer ").strip()
+        try:
+            from google.oauth2 import id_token
+            from google.auth.transport import requests as greq
+            info = id_token.verify_oauth2_token(token, greq.Request(), audience=TAREAS_AUDIENCIA)
+        except Exception:
+            raise HTTPException(401, "No autorizado")
+        if info.get("email") != TAREAS_SA or not info.get("email_verified"):
+            raise HTTPException(403, "Cuenta no permitida")
+        return {"ok": True, "nodo": NODO, **tareas_programadas()}
 
     @app.post("/api/control")
     def control(request: Request, accion: str = ""):
@@ -260,7 +276,7 @@ def registrar(app: FastAPI):
     @app.middleware("http")
     async def _sin_admin_en_nodo(request: Request, call_next):
         if request.url.path.startswith("/admin") and os.getenv("ADMIN_EN_NODO", "0") != "1":
-            return PlainTextResponse("No encontrado", status_code=404)
+            return PlainTextResponse("No encontrado", status_code=404, headers={"X-Centinela-Nodo": NODO})
         return await call_next(request)
 
     @app.get("/admin", response_class=authmod.HTMLResponse)

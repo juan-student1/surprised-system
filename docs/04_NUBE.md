@@ -1,6 +1,8 @@
 # 04 · Nube gratuita — Supabase, GitHub y Cloudflare
 
 ## 1 · Supabase (base de datos compartida)
+
+> ⚠️ **Reemplazado por Cloud SQL el 2026‑11‑18** ([`15_CLOUD_RUN_CLOUD_SQL_IAM.md`](15_CLOUD_RUN_CLOUD_SQL_IAM.md)). Supabase queda pausado como respaldo hasta confirmar la migración; esta sección es histórica.
 1. <https://supabase.com> → Sign in con GitHub → **New project**.
    - Name: `centinela` · Region: **East US (North Virginia)** (buena latencia desde Colombia) · Genera una contraseña **sin símbolos raros** (solo letras y números) y guárdala.
 2. Menú izquierdo → **SQL Editor** → New query → pegar todo `db/schema.sql` → **Run**. Debe decir *Success*.

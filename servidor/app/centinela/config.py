@@ -9,7 +9,8 @@ import logging
 import os
 from datetime import datetime, timezone
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
+# v1.5.0 = puede correr en Cloud Run (tareas por Cloud Scheduler + IA por proxy de Tailscale) con Cloud SQL.
 # v1.4.0 = misma API que antes, solo reorganizada en capas (config/utils/db/ia/servicios/auth/rutas).
 NODO = os.getenv("NODO_NOMBRE", "JE")
 ROL = os.getenv("NODO_ROL", "principal")
@@ -34,7 +35,18 @@ MANTENIMIENTO = {"on": False}  # el panel puede "detener" (simular caida) este n
 # Neon (plan gratis) apaga la BD tras 5 min sin uso y cobra horas de cómputo:
 # con Neon se late cada 15 min y no se dejan conexiones abiertas.
 ES_NEON = "neon.tech" in DATABASE_URL
-LATIDO_SEG = int(os.getenv("LATIDO_SEG", "900" if ES_NEON else "20"))
+# Cloud Run define K_SERVICE. Ahí la CPU se congela sin peticiones: los bucles de fondo
+# no sirven y el latido lo dispara Cloud Scheduler cada minuto (POST /tareas/latido).
+EN_CLOUD_RUN = bool(os.getenv("K_SERVICE"))
+LATIDO_SEG = int(os.getenv("LATIDO_SEG", "900" if ES_NEON else "60" if EN_CLOUD_RUN else "20"))
+# Un nodo se ve "en línea" si latió en los últimos 3 minutos (sirve para latidos de 20 s y de 60 s)
+UMBRAL_ONLINE_SEG = int(os.getenv("UMBRAL_ONLINE_SEG", str(max(LATIDO_SEG, 60) * 3)))
+# /tareas/latido solo acepta tokens OIDC firmados por Google para esta cuenta de servicio y audiencia
+TAREAS_SA = os.getenv("TAREAS_SA", "")
+TAREAS_AUDIENCIA = os.getenv("TAREAS_AUDIENCIA", "centinela-tareas")
+# En Cloud Run la IA del Lenovo se alcanza por el proxy HTTP de Tailscale (modo userspace)
+OLLAMA_PROXY = os.getenv("OLLAMA_PROXY", "") or None
+TS_SOCKET = os.getenv("TS_SOCKET", "")
 POOL_MIN = int(os.getenv("POOL_MIN", "0" if ES_NEON else "1"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 LIMITE_GLOBAL = int(os.getenv("LIMITE_GLOBAL", "150"))  # peticiones/min por IP a este nodo

@@ -5,15 +5,17 @@ Sistema distribuido y tolerante a fallos que identifica llamadas spam y estafas 
 **Grupo:** JE (Juan) · JP — Ingeniería de Sistemas, semestre 8.
 
 ```
-Usuarios → Cloudflare Worker (failover) → JE principal (VM Google Cloud) ─┐
-                                        ↘ JP respaldo (VM de JP) ─────────┴→ Supabase Postgres
+Usuarios → Cloudflare Worker (failover) → JE principal (Cloud Run) ─────┐
+                                        ↘ JP respaldo (VM de JP) ──────┴→ Cloud SQL Postgres (Google Cloud)
+           Cloud Scheduler (latido OIDC) ┘   IAM: una cuenta de servicio por función
                          Tailscale ↔ Lenovo de Juan: Ollama + n8n + Telegram
 ```
 
 ## Empieza aquí
 1. [`docs/00_PLAN_MAESTRO.md`](docs/00_PLAN_MAESTRO.md) — arquitectura, decisiones, fases
-2. [`docs/04_NUBE.md`](docs/04_NUBE.md) — Supabase, GitHub, Cloudflare
-3. [`docs/01_JE_SERVIDOR_PRINCIPAL.md`](docs/01_JE_SERVIDOR_PRINCIPAL.md)
+2. **[`docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md`](docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md) — JE en Cloud Run, BD en Cloud SQL, IAM (arquitectura actual)**
+3. [`docs/04_NUBE.md`](docs/04_NUBE.md) — GitHub, Cloudflare (y Supabase, ya reemplazado)
+4. [`docs/01_JE_SERVIDOR_PRINCIPAL.md`](docs/01_JE_SERVIDOR_PRINCIPAL.md) — histórico: JE en VM e2‑micro
 4. [`docs/02_JP_SERVIDOR_RESPALDO.md`](docs/02_JP_SERVIDOR_RESPALDO.md)
 5. [`docs/03_PC_PERSONAL_IA.md`](docs/03_PC_PERSONAL_IA.md) → ahora [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md)
 6. [`docs/05_PRUEBAS.md`](docs/05_PRUEBAS.md) — protocolo de pruebas y auditoría
@@ -30,7 +32,10 @@ Usuarios → Cloudflare Worker (failover) → JE principal (VM Google Cloud) ─
 ```
 db/schema.sql              Esquema PostgreSQL
 servidor/app/              API FastAPI del nodo (igual en JE y JP)
-servidor/instalar_nodo.sh  Debian/Mint/Arch o VM de Google Cloud → servidor (JE | JP)
+servidor/app/Dockerfile    Imagen de JE para Cloud Run (API + Tailscale userspace)
+servidor/instalar_nodo.sh  Debian/Mint/Arch → servidor (JP)
+servidor/conectar_cloudsql.sh  JP → Cloud SQL por Auth Proxy (cuenta centinela-jp)
+nube/                      Scripts de Cloud Shell: IAM, Cloud SQL, secretos, migración, Cloud Run, Scheduler
 servidor/actualizar.sh     Actualizar la API desde GitHub
 servidor/configurar_telegram.sh  Token del bot, chat_id y clave del celular
 gateway/                   Cloudflare Worker con failover
@@ -38,6 +43,7 @@ ia/                        Ollama y n8n en el PC personal
 web/                       Web responsive (se publica con el gateway)
 ia/n8n/                    Flujos de n8n para importar (bot + avisos)
 db/002_llamadas.sql        Migración: llamadas reales
+db/003_cloudsql.sql        Migración: ajustes para Cloud SQL (RLS, permisos de centinela_jp)
 docs/                      Guías paso a paso
 ```
 

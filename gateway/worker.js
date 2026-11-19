@@ -397,6 +397,9 @@ function nodos(env) {
   ].filter((n) => n.base);
 }
 
+// Toda respuesta de la API de Centinela trae X-Centinela-Nodo (la pone el middleware del nodo)
+const esDeCentinela = (r) => !!r.headers.get("x-centinela-nodo");
+
 async function conTimeout(recurso, opciones, ms) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
@@ -412,6 +415,7 @@ async function vivo(n, ms = TIMEOUT_MS) {
   try {
     const r = await conTimeout(n.base + "/health", {}, ms);
     if (r.status >= 500) throw new Error("HTTP " + r.status);
+    if (!esDeCentinela(r)) throw new Error("HTTP " + r.status + " ajeno");
     const health = await r.json();
     await marcarVivo(n);
     return { nombre: n.nombre, online: true, latencia_ms: Date.now() - t0, health };
@@ -460,6 +464,9 @@ async function proxy(req, env, url, ctx) {
       const r = await conTimeout(n.base + url.pathname + url.search,
         { method: req.method, headers: h, body: cuerpo }, esLento ? TIMEOUT_CHAT_MS : TIMEOUT_MS);
       if (r.status >= 500) { await marcarCaido(n); fallas.push(`${n.nombre}:HTTP ${r.status}`); continue; }
+      // Cloud Run responde 403/404 él mismo si se le quita el permiso run.invoker (IAM) o se cierra el
+      // ingreso: esa respuesta no viene de la API (no trae X-Centinela-Nodo) y cuenta como caída.
+      if (!esDeCentinela(r)) { await marcarCaido(n); fallas.push(`${n.nombre}:HTTP ${r.status} ajeno`); continue; }
       await marcarVivo(n);
       const resp = new Response(r.body, r);
       resp.headers.set("X-Centinela-Nodo", n.nombre);

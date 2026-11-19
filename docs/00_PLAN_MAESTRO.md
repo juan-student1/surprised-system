@@ -16,6 +16,8 @@ Cada persona que recibe una llamada rara la reporta (web, Telegram o automática
 
 ## 2. Arquitectura
 
+> **Cambio 2026‑11‑18 (pedido del profesor):** JE pasa de la VM a **Cloud Run**, la base de datos se migra de Supabase a **Cloud SQL** y el acceso se controla con **IAM**. Detalle, decisiones y pasos: [`15_CLOUD_RUN_CLOUD_SQL_IAM.md`](15_CLOUD_RUN_CLOUD_SQL_IAM.md). Lo que sigue en esta sección describe la etapa anterior (VM) salvo donde se indique.
+>
 > **Cambio 2026‑11‑17:** el nodo **JE** dejó el PC de mesa y ahora es una **VM e2‑micro en Google Cloud** (`us-east1`). La IA (`centinela-ia`) pasa al **Lenovo** de Juan. JP sigue de respaldo en su VM. La URL pública de JE **no cambió** (mismo nombre en Tailscale), así que el gateway quedó igual.
 
 ```mermaid
@@ -70,8 +72,9 @@ Gateway → JE/JP entra por **Tailscale Funnel** (HTTPS público sin abrir puert
 5. **IA local, no en la nube** → Ollama corre en el PC con más potencia; los servidores lo consultan por la red privada. Si el PC de IA está apagado, el chatbot responde con reglas (degradación elegante).
 6. **Privacidad** → nunca se guarda la IP ni el usuario real: solo un hash anónimo. RLS activado en Supabase para bloquear su API pública.
 7. **Servidores en consola** → sin escritorio gráfico se liberan ~400‑600 MB de RAM en equipos de 4 GB.
-8. **JE en una VM de Compute Engine y no en Cloud Run** → la arquitectura necesita un proceso **siempre encendido** (latidos cada 20 s, sincronización de SQLite) y **Tailscale** (Funnel + IA por red privada). Cloud Run apaga la CPU sin peticiones, su disco es efímero (se perdería el búfer SQLite), el arranque en frío puede superar los 4 s del failover y Tailscale no corre normal dentro del contenedor. La e2‑micro entra en el **nivel gratis** y reutiliza `instalar_nodo.sh` sin reescribir nada.
+8. ~~**JE en una VM de Compute Engine y no en Cloud Run**~~ *(reemplazada el 2026‑11‑18: los 4 problemas se resolvieron con Cloud Scheduler + OIDC, Tailscale userspace, `--cpu-boost` y `max-instances=1`; ver `15_CLOUD_RUN_CLOUD_SQL_IAM.md` §2.1)* → la arquitectura necesita un proceso **siempre encendido** (latidos cada 20 s, sincronización de SQLite) y **Tailscale** (Funnel + IA por red privada). Cloud Run apaga la CPU sin peticiones, su disco es efímero (se perdería el búfer SQLite), el arranque en frío puede superar los 4 s del failover y Tailscale no corre normal dentro del contenedor. La e2‑micro entra en el **nivel gratis** y reutiliza `instalar_nodo.sh` sin reescribir nada.
 9. **Cero puertos públicos en la nube** → se borraron las reglas por defecto de RDP e ICMP; SSH solo desde el túnel **IAP** de Google (`35.235.240.0/20`, exige login en la cuenta). El tráfico web entra por Tailscale Funnel. Dentro de la VM, `ufw` niega todo lo demás y `fail2ban` vigila SSH.
+11. **Cloud SQL + IAM (2026‑11‑18)** → la BD vive en Google (`centinela-db`, Postgres 17, `db-f1-micro`) con **conector obligatorio**: solo Cloud Run y el Auth Proxy entran, ambos con identidad IAM. Tres cuentas de servicio con un solo propósito (`centinela-run`, `centinela-tareas`, `centinela-jp`); los secretos se dan uno por uno; JP usa un usuario de BD sin permisos de esquema.
 10. **Mínimo gasto del crédito** → solo un recurso cobra: la IP pública efímera (~3,6 USD/mes, necesaria para salir a internet; Cloud NAT costaría ~30). Disco **estándar** (no "equilibrado"), sin snapshots, sin Ops Agent, sin IP estática. Alerta de presupuesto desde el día 1 sin contar créditos.
 
 ### Cómo se calcula el riesgo
@@ -206,6 +209,8 @@ Lo que falta probar en el hardware real está en `05_PRUEBAS.md`.
 ---
 
 ## 7. Costos en Google Cloud y cierre del curso
+
+> **Desde 2026‑11‑18** el costo principal es Cloud SQL (~9‑11 USD/mes); Cloud Run, Scheduler y Secret Manager quedan en ~0 y la VM se elimina. Estimado hasta diciembre: **~10‑15 USD de los 300**. Tabla completa en `15_CLOUD_RUN_CLOUD_SQL_IAM.md` §6. La tabla de abajo es la de la etapa con VM.
 
 | Recurso | Costo |
 |---|---|
