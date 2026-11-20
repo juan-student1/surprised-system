@@ -13,7 +13,7 @@ for K in SAL_HASH CONTROL_TOKEN TELEGRAM_TOKEN TELEGRAM_CHAT_ID LLAMADAS_TOKEN G
   existe_secreto "$n" && SECRETOS+=",$K=$n:latest"
 done
 VARS="NODO_NOMBRE=JE|NODO_ROL=principal|LOCAL_DB=/tmp/local.db|CORS_ORIGINS=*"
-VARS+="|OLLAMA_URL=http://centinela-ia:11434|OLLAMA_MODEL=qwen2.5:7b"
+VARS+="|OLLAMA_URL=http://centinela-ia.tailaf5c0b.ts.net:11434|OLLAMA_MODEL=centinela"   # nombre completo para el proxy de Tailscale; modelo acotado del Lenovo
 VARS+="|TAREAS_SA=$SA_TAREAS|TAREAS_AUDIENCIA=centinela-tareas"
 VARS+="|TS_HOSTNAME=centinela-je-run|TS_SOCKET=/tmp/tailscale/tailscaled.sock"
 existe_secreto centinela-ts-authkey && VARS+="|OLLAMA_PROXY=http://localhost:1055"
