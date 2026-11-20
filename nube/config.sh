@@ -41,6 +41,8 @@ guardar_secreto(){
       --locations="$REGION" --labels=app=centinela --data-file=- >/dev/null
     echo "  ✔ $nombre"
   fi
+  # Huella (no revela el valor): compárala con la del otro equipo para saber que se pegó lo correcto
+  echo "    huella: $(printf '%s' "$valor" | sha256sum | cut -c1-12)"
   if [[ -n "$lector" ]]; then
     gcloud secrets add-iam-policy-binding "$nombre" --member="serviceAccount:$lector" \
       --role=roles/secretmanager.secretAccessor --condition=None >/dev/null

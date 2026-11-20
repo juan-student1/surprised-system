@@ -223,6 +223,7 @@ Cada despliegue crea una **revisión** nueva; si algo falla se vuelve a la anter
 | El despliegue falla por `Permission denied … secret` | `centinela-run` no tiene acceso a ese secreto | Correr de nuevo el paso 3 (vuelve a dar el permiso) |
 | Scheduler en `PERMISSION_DENIED` o la API responde 401 | Falta el permiso del agente o la audiencia no coincide | Correr de nuevo el paso 6 |
 | `ollama:false` en JE | Lenovo apagado, llave de Tailscale vencida o no puesta | Normal: chat por reglas. Llave nueva → paso 3 + paso 5 |
+| Log: `invalid key: API key … not valid` justo después de un despliegue | La llave de Tailscale era de **un solo uso** (sin *Reusable*): la gastó la primera instancia | Llave nueva **Reusable** → paso 3 + paso 5 |
 | JP con `db:false` | El proxy no arrancó (llave o conexión mal puestas) | `journalctl -u cloudsql-proxy -n 30` en JP |
 | `Enterprise Plus` en la factura | Se creó la instancia sin `--edition=ENTERPRISE` | Usar el script; nunca crearla a mano con los valores por defecto |
 

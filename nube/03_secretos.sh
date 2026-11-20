@@ -24,7 +24,9 @@ unset ENV_VM V
 
 azul "Llave de Tailscale para Cloud Run (para llegar a la IA del Lenovo)"
 echo "  Créala en https://login.tailscale.com/admin/settings/keys → Generate auth key:"
-echo "  Reusable ✔  Ephemeral ✔  Pre-approved ✔  Expiración 90 días"
+echo "  Reusable ✔ (OBLIGATORIO: cada despliegue crea una instancia que entra de nuevo; una llave de un"
+echo "  solo uso se gasta en la primera y las siguientes fallan con 'invalid key')"
+echo "  Ephemeral ✔  Pre-approved ✔  Tags: tag:centinela-run (ver docs/15 §2.6)  Expiración 90 días"
 read -rsp "  Pega la llave tskey-auth-... (Enter = sin IA, el chat responde por reglas): " TS; echo
 TS="$(printf '%s' "$TS" | tr -d '[:space:]')"
 if [[ -n "$TS" && "$TS" != tskey-auth-* ]]; then
