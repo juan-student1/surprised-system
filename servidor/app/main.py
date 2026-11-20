@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, log, MANTENIMIENTO, EN_CLOUD_RUN
 from centinela.db import pool, local, evento
 from centinela.servicios import latido, sincronizador, vigilar_ia, latir_una_vez, _exceso
-from centinela.utilidades import ip_cliente
+from centinela.utilidades import ip_cliente, viene_del_gateway
 from centinela import rutas
 
 
@@ -71,6 +71,10 @@ async def guardia(request: Request, call_next):
         r = Response('{"error":"Nodo en mantenimiento","nodo":"' + NODO + '"}', status_code=503, media_type="application/json")
         r.headers["X-Centinela-Nodo"] = NODO
         return r
+    # Puerta única: con GATEWAY_SECRET, lo que no venga del Worker se rechaza (la URL de Cloud Run y la del
+    # Funnel son públicas). Excepciones: salud (la usa el gateway), latido (token OIDC) y control (token propio).
+    if not viene_del_gateway(request) and request.url.path not in ("/health", "/ping", "/", "/tareas/latido", "/api/control"):
+        return Response('{"error":"Acceso solo por el gateway"}', status_code=403, media_type="application/json")
     # Escudo por IP en el propio nodo: si el gateway cae o atacan por el Funnel directo,
     # ninguna IP puede inundar la API. /health, /ping y / quedan libres (los usa el clúster).
     if request.url.path not in ("/health", "/ping", "/", "/tareas/latido"):

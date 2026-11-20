@@ -120,6 +120,22 @@ def chat_logic(c: Chat):
         except Exception as e: log.warning("Ollama falló, respondo con reglas: %s", e)
     return {"respuesta": respuesta_reglas(fichas, st), "fuente": "reglas", "nodo": NODO, "numeros": fichas}
 
+_google = {"req": None}
+def _peticion_google():
+    """Transporte de google-auth que guarda 1 h las llaves públicas de Google: un atacante que mande tokens
+    falsos a /tareas/latido no obliga al nodo a descargarlas en cada petición."""
+    if _google["req"] is None:
+        import time as _t
+        from google.auth.transport import requests as greq
+        base = greq.Request(); cache = {}
+        def pedir(url, method="GET", **kw):
+            if method == "GET" and url in cache and _t.time() - cache[url][0] < 3600: return cache[url][1]
+            r = base(url, method=method, **kw)
+            if method == "GET" and r.status == 200: cache[url] = (_t.time(), r)
+            return r
+        _google["req"] = pedir
+    return _google["req"]
+
 def registrar(app: FastAPI):
     @app.get("/")
     def raiz(): return {"servicio": "Centinela", "nodo": NODO, "rol": ROL, "version": VERSION}
@@ -138,10 +154,10 @@ def registrar(app: FastAPI):
         # centinela-tareas. Se verifica la firma, la audiencia y el correo (IAM, no una clave compartida).
         if not TAREAS_SA: raise HTTPException(404, "No encontrado")
         token = (request.headers.get("authorization") or "").removeprefix("Bearer ").strip()
+        if token.count(".") != 2 or len(token) > 4096: raise HTTPException(401, "No autorizado")  # ni siquiera parece un JWT
         try:
             from google.oauth2 import id_token
-            from google.auth.transport import requests as greq
-            info = id_token.verify_oauth2_token(token, greq.Request(), audience=TAREAS_AUDIENCIA)
+            info = id_token.verify_oauth2_token(token, _peticion_google(), audience=TAREAS_AUDIENCIA)
         except Exception:
             raise HTTPException(401, "No autorizado")
         if info.get("email") != TAREAS_SA or not info.get("email_verified"):

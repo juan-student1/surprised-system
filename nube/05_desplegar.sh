@@ -16,6 +16,8 @@ VARS="NODO_NOMBRE=JE|NODO_ROL=principal|LOCAL_DB=/tmp/local.db|CORS_ORIGINS=*"
 VARS+="|OLLAMA_URL=http://centinela-ia.tailaf5c0b.ts.net:11434|OLLAMA_MODEL=centinela"   # nombre completo para el proxy de Tailscale; modelo acotado del Lenovo
 VARS+="|TAREAS_SA=$SA_TAREAS|TAREAS_AUDIENCIA=centinela-tareas"
 VARS+="|TS_HOSTNAME=centinela-je-run|TS_SOCKET=/tmp/tailscale/tailscaled.sock"
+# Con TS_TAGS=tag:centinela-run (y una llave creada con ese tag) las ACL limitan a JE a la IA. Ver docs/15 §2.6
+[[ -n "${TS_TAGS:-}" ]] && VARS+="|TS_TAGS=$TS_TAGS"
 existe_secreto centinela-ts-authkey && VARS+="|OLLAMA_PROXY=http://localhost:1055"
 
 azul "Desplegando $SERVICIO en $REGION (la primera vez tarda ~4 min)"

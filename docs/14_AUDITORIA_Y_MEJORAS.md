@@ -96,3 +96,7 @@ Después de los bloques 1 y 2: `sudo bash servidor/actualizar.sh` en su VM y pon
 ## Para la sustentación
 - Mostrar esta tabla como evidencia de **auditoría propia**: herramientas (gitleaks, semgrep, trivy), revisión manual y verificación independiente.
 - Explicar el principio aprendido: *"nunca confiar en lo que manda el cliente"* y *"defensa en profundidad: el gateway no es la única barrera"*.
+
+## Auditoría de la migración a Cloud Run (2026‑11‑20)
+Ver `15_CLOUD_RUN_CLOUD_SQL_IAM.md` §2.6: 6 hallazgos (1 crítico por dependencias de la imagen de Tailscale, 3 medios, 2 bajos), 5 corregidos en código y 1 (ACL de Tailscale) documentado para hacerlo en el panel.
+

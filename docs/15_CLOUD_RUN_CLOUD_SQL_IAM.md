@@ -124,6 +124,36 @@ bash nube/08_failover.sh prender   # lo devuelve
 ```
 También sigue funcionando el botón "detener JE" del panel (modo mantenimiento → 503).
 
+### 2.6 Seguridad revisada (auditoría 2026‑11‑20)
+Se auditó todo lo nuevo (OIDC, IAM, Cloud SQL, contenedor, gateway) con revisión manual, `gitleaks`, `trivy` (dependencias **e imágenes**) y `semgrep`. Lo bien hecho: OIDC verificado (firma, audiencia y cuenta exacta), un rol por cuenta de servicio y permisos **secreto por secreto**, Cloud SQL con conector obligatorio + SSL + sin redes autorizadas + usuario de JP creado por SQL, contenedor sin root, cero llaves JSON para Cloud Run. Corregido:
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| C1 | Imagen `tailscale:v1.76.6` con **3 CVE críticos** (Go stdlib) y 149 altos | `v1.104.7` |
+| C2 | La URL de Cloud Run (y la del Funnel de JP) es pública: se podía saltar el gateway y sus límites | **Puerta única:** con `GATEWAY_SECRET`, el nodo rechaza (403) todo lo que no venga del Worker, salvo `/health`, `/tareas/latido` (OIDC) y `/api/control` (token) |
+| C3 | La llave de Tailscale quedaba legible para el proceso de la API (línea de comandos y entorno de `tailscaled`) | Va en un archivo temporal `600` (`--auth-key=file:`), se borra al conectar, y `tailscaled` arranca sin la variable |
+| C4 | `/tareas/latido` descargaba las llaves de Google en cada petición (incluso con tokens basura) | Rechazo inmediato si no parece un JWT + llaves en caché 1 h |
+| C5 | `requests 2.32.3` (CVE‑2024‑47081, CVE‑2026‑25645) | `2.33.0` |
+| C6 | Cloud Run entra a Tailscale **con la identidad de Juan**: si alguien lograra ejecutar código en la API, vería toda la red privada | ACL con tag (abajo) — **se configura en el panel de Tailscale** |
+
+**C6 · Limitar a JE a la IA y nada más (Tailscale admin → Access controls):**
+1. En la política, agregar el dueño del tag y cambiar la regla general para que **no** incluya equipos con tag (los tags no son `autogroup:member`):
+   ```jsonc
+   "tagOwners": { "tag:centinela-run": ["autogroup:admin"] },
+   "hosts":     { "centinela-ia": "100.x.y.z" },   // la IP de centinela-ia que muestra el panel (no se sube al repo)
+   "acls": [
+     { "action": "accept", "src": ["autogroup:member"],  "dst": ["*:*"] },
+     { "action": "accept", "src": ["tag:centinela-run"], "dst": ["centinela-ia:11434"] }
+   ]
+   ```
+   (Si la política tiene `{"src": ["*"], "dst": ["*:*"]}`, ese `*` se cambia por `autogroup:member`.)
+2. **Generate auth key** → Reusable ✔ Ephemeral ✔ Pre‑approved ✔ **Tags: `tag:centinela-run`**.
+3. Cloud Shell: guardar la llave (`gcloud secrets versions add centinela-ts-authkey …`) y desplegar con el tag:
+   `TS_TAGS=tag:centinela-run bash nube/05_desplegar.sh`
+4. Comprobar: `/gateway/estado` con `"ollama":true`, y en el panel la máquina `centinela-je-run` con el tag.
+
+Pendiente aceptado (bajo): la llave JSON de `centinela-jp` no vence sola → se borra al cerrar el curso; `centinela_app` es `cloudsqlsuperuser` (lo crea `gcloud`); la API no tiene SQL dinámico, así que el riesgo es bajo.
+
 ---
 
 ## 3. Paso a paso (Cloud Shell)

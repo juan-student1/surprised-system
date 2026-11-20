@@ -65,6 +65,13 @@ def nivel_de(score: int) -> str:
     return "alto" if score >= 60 else "medio" if score >= 25 else "bajo"
 
 
+def viene_del_gateway(req: Request) -> bool:
+    """True si la petición trae el secreto del gateway. Sin GATEWAY_SECRET configurado, todo vale (modo anterior)."""
+    if not GATEWAY_SECRET:
+        return True
+    return hmac.compare_digest(req.headers.get("x-centinela-gateway") or "", GATEWAY_SECRET)
+
+
 def ip_cliente(req: Request) -> str:
     """IP real del cliente. Con GATEWAY_SECRET solo se cree la IP que reenvía el gateway (Cloudflare);
     quien entre directo por el Funnel no puede inventarse otra IP con encabezados."""

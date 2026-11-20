@@ -234,10 +234,11 @@ async function datosPanel(env){
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000);
       try {
-        const sres = await fetch(n.base + "/api/stats", { signal: c.signal });
+        const hg = { "X-Centinela-Gateway": env.GATEWAY_SECRET || "1" };
+        const sres = await fetch(n.base + "/api/stats", { signal: c.signal, headers: hg });
         if (!sres.ok) throw new Error("down");
         const s = await sres.json();
-        const tres = await fetch(n.base + "/api/top?limite=100", { signal: c.signal });
+        const tres = await fetch(n.base + "/api/top?limite=100", { signal: c.signal, headers: hg });
         const tp = tres.ok ? await tres.json() : [];
         return { stats: s, top: Array.isArray(tp) ? tp : [], nodo: n.nombre };
       } finally { clearTimeout(t); }
@@ -341,7 +342,7 @@ async function handleAdmin(req, env, url) {
     const base = ((nodo === "JE" ? env.NODO_PRINCIPAL : env.NODO_RESPALDO) || "").replace(/\/$/, "");
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000);
-      try { await fetch(base + "/api/control?accion=" + accion, { method: "POST", headers: { "x-centinela-control": env.CONTROL_TOKEN || "" }, signal: c.signal }); }
+      try { await fetch(base + "/api/control?accion=" + accion, { method: "POST", headers: { "x-centinela-control": env.CONTROL_TOKEN || "", "X-Centinela-Gateway": env.GATEWAY_SECRET || "1" }, signal: c.signal }); }
       finally { clearTimeout(t); }
     } catch (e) {}
     // El cortacircuito se actualiza al instante para que el failover se vea sin esperar
