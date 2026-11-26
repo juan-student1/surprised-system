@@ -22,6 +22,7 @@ flowchart LR
         SCH["⏰ Cloud Scheduler<br/>latido cada minuto (OIDC)"]
         SM["🔐 Secret Manager"]
         SQL[("🗄️ Cloud SQL<br/>Postgres 17")]
+        VTX["✨ Vertex AI<br/>Gemini Flash · respaldo a demanda"]
     end
 
     subgraph JPV["VM de JP"]
@@ -44,6 +45,7 @@ flowchart LR
     JP -->|"Auth Proxy IAM"| SQL
     RUN -.->|"Tailscale userspace"| OLL
     JP -.->|"Tailscale"| OLL
+    RUN -.->|"si Ollama no responde · con topes"| VTX
 ```
 
 **Flujo de una consulta:** el usuario abre la web → el Worker sirve la página → la web pide `/api/numero/…` → el Worker reenvía a JE con el secreto del gateway y la IP real → JE consulta Cloud SQL y responde → si JE no contesta en 6 s (o lo devuelve Google con 403/404), el Worker lo marca caído 30 s y reintenta en JP.
@@ -75,7 +77,7 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 ### ADR‑005 · IA local (Ollama en el Lenovo) por Tailscale ✅
 - **Contexto:** la IA en la nube cuesta por token y los reportes son datos sensibles.
 - **Decisión:** modelo acotado `centinela` en Ollama dentro del Lenovo; JE llega por Tailscale en modo userspace (proxy `localhost:1055`), JP por Tailscale normal.
-- **Consecuencias:** + gratis y privado; + si se apaga, nada se cae: el chat responde por reglas. − Disponibilidad atada al Lenovo (se resuelve en la **Fase 3** con Vertex AI Gemini como respaldo a demanda, ver `16_VERTEX_AI.md` cuando exista).
+- **Consecuencias:** + gratis y privado; + si se apaga, nada se cae. − Disponibilidad atada al Lenovo → ADR‑013.
 
 ### ADR‑006 · Tareas por Cloud Scheduler + OIDC en vez de bucles ✅
 - **Contexto:** Cloud Run congela la CPU sin peticiones; los bucles de fondo no corren.
@@ -106,6 +108,11 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 - **Decisión:** cada 401/403/429 suma en un contador por (hora, código, grupo de ruta); el latido lo vuelca a `seguridad_hora`. Sin IPs.
 - **Consecuencias:** + un ataque no genera una escritura a la BD por petición; + privacidad. − Si la instancia muere antes del latido se pierde menos de un minuto de conteo.
 
+### ADR‑013 · IA híbrida: Ollama primero, Vertex AI Gemini de respaldo con topes ✅ (Fase 3)
+- **Contexto:** con el Lenovo apagado el chat bajaba a reglas; el análisis de muchos reportes juntos no cabe en un modelo de 7B.
+- **Decisión:** Ollama → Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas. Gemini solo por acción de una persona, con tope por hora (20), por día (100), de análisis profundos (10/día), caché de 1 h y timeout de 20 s. Identidad `centinela-run` con `roles/aiplatform.user`. Detalle: [`16_VERTEX_AI.md`](../16_VERTEX_AI.md).
+- **Consecuencias:** + el chat sigue "inteligente" aunque el Lenovo se apague; + análisis profundo a demanda. − Costo variable acotado por los topes; − lo que va a Gemini sale de nuestra red (por eso se anonimiza y lo sensible se queda local).
+
 ## 3. Costos mensuales estimados
 
 | Recurso | Plan / tamaño | USD/mes |
@@ -122,7 +129,8 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 | Lenovo (IA) y VM de JP | equipos propios | electricidad |
 | **Total nube** | | **≈ 10‑12 USD/mes** (del crédito de 300 USD) |
 
-**Fases siguientes (por estimar antes de crear nada):** Vertex AI Gemini Flash solo a demanda y con tope de llamadas (Fase 3); BigQuery dentro del nivel gratis (10 GB de almacenamiento y 1 TB de consultas al mes) y un segundo trabajo de Scheduler (Fase 4).
+**Vertex AI Gemini (Fase 3):** centavos en uso normal; peor caso acotado por los topes (orden de 10‑20 USD/mes, ver `16_VERTEX_AI.md` §4).
+**Fase siguiente (por estimar antes de crear nada):** BigQuery dentro del nivel gratis (10 GB de almacenamiento y 1 TB de consultas al mes) y un segundo trabajo de Scheduler (Fase 4).
 
 ## 4. Qué mostrar en la sustentación (JE)
 1. Este diagrama y por qué cada pieza está donde está (ADR 001‑006).

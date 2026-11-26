@@ -46,12 +46,14 @@ def app_mod():
 def cliente(app_mod, monkeypatch):
     """Cliente HTTP SIN lifespan (no arranca bucles de fondo ni toca la BD)."""
     from fastapi.testclient import TestClient
-    from centinela import rutas, servicios
+    from centinela import ia, rutas, servicios
     from centinela.config import MANTENIMIENTO
 
-    # Sin IA en los tests (respuesta inmediata por reglas)
+    # Sin IA en los tests (respuesta inmediata por reglas); Vertex está apagado (sin VERTEX_PROYECTO)
     monkeypatch.setattr(rutas, "ollama_disponible", lambda *a, **k: False)
+    monkeypatch.setattr(rutas, "ia_disponible", lambda *a, **k: False)
     monkeypatch.setattr(servicios, "ollama_disponible", lambda *a, **k: False)
+    monkeypatch.setattr(ia, "ollama_disponible", lambda *a, **k: False)
     # Límites de peticiones limpios en cada test
     servicios._baldes.clear()
     MANTENIMIENTO["on"] = False

@@ -19,6 +19,13 @@ VARS+="|TS_HOSTNAME=centinela-je-run|TS_SOCKET=/tmp/tailscale/tailscaled.sock"
 # Con TS_TAGS=tag:centinela-run (y una llave creada con ese tag) las ACL limitan a JE a la IA. Ver docs/15 §2.6
 [[ -n "${TS_TAGS:-}" ]] && VARS+="|TS_TAGS=$TS_TAGS"
 existe_secreto centinela-ts-authkey && VARS+="|OLLAMA_PROXY=http://localhost:1055"
+# Vertex AI (Gemini) de respaldo: solo si la API está habilitada (nube/11_vertex.sh dar). Topes en config.py.
+if gcloud services list --enabled --filter="config.name=aiplatform.googleapis.com" --format="value(config.name)" 2>/dev/null | grep -q aiplatform; then
+  VARS+="|VERTEX_PROYECTO=$PROYECTO|VERTEX_REGION=${VERTEX_REGION:-global}|VERTEX_MODELO=${VERTEX_MODELO:-gemini-3.8-flash}"
+  echo "Vertex AI: encendido (${VERTEX_MODELO:-gemini-3.8-flash}, ${VERTEX_REGION:-global})"
+else
+  echo "Vertex AI: apagado (la API no está habilitada; ver nube/11_vertex.sh)"
+fi
 
 azul "Desplegando $SERVICIO en $REGION (la primera vez tarda ~4 min)"
 # max-instances=1: el modo mantenimiento (demo de failover) vive en memoria de UNA instancia.

@@ -7,7 +7,7 @@ import httpx
 from .config import NODO, ROL, VERSION, INICIO, LATIDO_SEG, TELEGRAM_TOKEN, TELEGRAM_API, TELEGRAM_CHAT_ID, CATEGORIAS, CAMPANA_REPORTEROS, CAMPANA_VENTANA_MIN, log
 from .db import pool, q, local, evento, guardar_reporte, ficha, marcar_db
 from .utilidades import normalizar, hash_reportero, ip_tailscale, metricas
-from .ia import clasificar_con_ia, ollama_disponible
+from .ia import clasificar_con_ia, ollama_disponible, volcar_uso_ia
 
 # ------ Rate limiting (defensa en profundidad) ------
 _baldes: dict[str, defaultdict] = {}
@@ -114,7 +114,7 @@ def latir_una_vez() -> bool:
     try:
         q("""insert into nodos (nombre, rol, ip_tailscale, hostname, cpu, ram, disco, temp, version, iniciado, ultimo_latido) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now()) on conflict (nombre) do update set rol=excluded.rol, ip_tailscale=excluded.ip_tailscale, hostname=excluded.hostname, cpu=excluded.cpu, ram=excluded.ram, disco=excluded.disco, temp=excluded.temp, version=excluded.version, iniciado=excluded.iniciado, ultimo_latido=now()""", (NODO, ROL, _host["ip"], _host["nombre"], m["cpu"], m["ram"], m["disco"], m["temp"], VERSION, INICIO))
         marcar_db(True)
-        if pool is not None: volcar_seguridad()
+        if pool is not None: volcar_seguridad(); volcar_uso_ia()
         return True
     except Exception as e:
         marcar_db(False); log.warning("Latido no enviado (BD caída?): %s", e); return False

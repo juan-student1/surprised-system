@@ -248,7 +248,7 @@ async function datosPanel(env){
 }
 // ---------- Panel: pestañas (Resumen · Arquitectura [JE] · Seguridad [JP] · Ventas [JM]) ----------
 // Todo se arma en el servidor: cero JavaScript en el navegador (compatible con la CSP script-src 'self').
-const PESTANAS = [["/admin", "Resumen"], ["/admin/arquitectura", "Arquitectura"], ["/admin/seguridad", "Seguridad"], ["/admin/ventas", "Ventas"]];
+const PESTANAS = [["/admin", "Resumen"], ["/admin/arquitectura", "Arquitectura"], ["/admin/seguridad", "Seguridad"], ["/admin/ventas", "Ventas"], ["/admin/ia", "IA"]];
 const REPO_DOCS = "https://github.com/juan-student1/surprised-system/blob/main/docs/roles/";
 const PANEL_CSS = " .hdr{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:4px} .top{max-width:1100px;margin:0 auto} table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px} th,td{padding:8px;border-bottom:1px solid #283252;text-align:left;vertical-align:top} th{color:#9ba5bd} a{color:#7a93ff} .stats{color:#9ba5bd;font-size:14px;margin:0 0 8px} .ctrl{background:#161e33;border:1px solid #283252;border-radius:12px;padding:16px;margin:12px 0 18px} .ctrl-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px} .act{font-size:22px;font-weight:700;color:#7dffa9;margin-top:2px} .lbl{color:#9ba5bd;font-size:12px;text-transform:uppercase;letter-spacing:.04em} .grupo{display:flex;gap:10px;flex-wrap:wrap} .ctrl form{display:inline;margin:0} .ctrl button{width:auto;margin-top:0;padding:10px 14px;font-size:14px} .rojo{background:#cc2539} .verde{background:#1f9d57} .nota{color:#9ba5bd;font-size:13px;margin:12px 0 0} .count{color:#9ba5bd;font-size:12px;margin-top:14px}"
   + " .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 6px;border-bottom:1px solid #283252} .tabs a{padding:9px 14px;border-radius:8px 8px 0 0;color:#9ba5bd;text-decoration:none;font-weight:600;font-size:14px} .tabs a[aria-current=page]{background:#161e33;color:#e7ebf4;border:1px solid #283252;border-bottom-color:#161e33;margin-bottom:-1px}"
@@ -325,7 +325,8 @@ async function paginaArquitectura(username, env) {
     ["JP · nodo de respaldo", "VM de JP (Tailscale Funnel)", h.JP ? h.JP.online : null, descNodo(h.JP), "Si JE cae, el gateway manda todo aquí en menos de un segundo."],
     ["Base de datos", "Cloud SQL · Postgres 17", algun("db"), "Vista desde los nodos que respondieron", "Guarda números, reportes y eventos. Solo entra quien tenga identidad de Google (IAM)."],
     ["Latido programado", "Cloud Scheduler (OIDC)", latJE == null ? null : latJE < 180, latJE == null ? "Sin latidos de JE" : "Último latido de JE hace " + hace(latJE), "Cada minuto despierta a JE, sincroniza pendientes y revisa la IA."],
-    ["IA local", "Lenovo · Ollama (modelo centinela) por Tailscale", algun("ollama"), algun("ollama") ? "Respondiendo" : "Chat responde por reglas", "Clasifica reportes y conversa. Si se apaga, nada se cae: el chat sigue por reglas."],
+    ["IA local", "Lenovo · Ollama (modelo centinela) por Tailscale", algun("ollama"), algun("ollama") ? "Respondiendo" : "Pasa a Gemini o a reglas", "Primera opción: gratis y privada. Clasifica reportes y conversa."],
+    ["IA de respaldo", "Vertex AI · Gemini Flash (a demanda)", algun("vertex"), algun("vertex") ? "Configurada, con topes por hora y por día" : "Apagada en este nodo", "Solo responde si el Lenovo no contesta, o cuando se pide un análisis profundo en la pestaña IA."],
     ["Modo degradado", "SQLite en cada nodo", pend === 0 ? true : pend > 0 ? false : null, pend + " reporte(s) en cola para sincronizar", "Si la base falla, los reportes se guardan en el nodo y se suben al volver."],
   ];
   const filas = piezas.map(([nom, donde, ok, det, que]) => `<tr><td><b>${nom}</b><div class=que>${que}</div></td><td>${donde}</td><td>${nom === "Modo degradado" ? chip(ok, "Sin cola", "Con cola") : chip(ok)}</td><td>${det}</td></tr>`).join("");
@@ -379,6 +380,51 @@ async function paginaSeguridad(username, env) {
   cuerpo += `<h2>Último escaneo (CI en main: gitleaks, trivy, ruff, pytest, shellcheck)</h2><p class=stats>${esc}</p>`;
   cuerpo += `<p class=count>Los 429 del propio gateway (límites por IP en el borde) se ven en Cloudflare → Security → Analytics. Modelo de amenazas y checklist: <a href="${REPO_DOCS}JP_SEGURIDAD.md">docs/roles/JP_SEGURIDAD.md</a>.</p>`;
   return marco(username, "/admin/seguridad", cuerpo);
+}
+
+// Pestaña IA: uso de Ollama/Gemini, cupo de Gemini y "análisis profundo" a demanda (nunca automático).
+async function pedirAnalisis(env, tipo) {
+  // Solo JE tiene Vertex; el análisis puede tardar hasta ~60 s.
+  const n = nodos(env).find((x) => x.nombre === "JE");
+  if (!n) return { error: "JE no está configurado" };
+  try {
+    const r = await conTimeout(n.base + "/api/interno/analisis?tipo=" + tipo, { method: "POST",
+      headers: { "X-Centinela-Gateway": env.GATEWAY_SECRET || "1", "x-centinela-control": env.CONTROL_TOKEN || "" } }, 90000);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { error: d.detail || d.error || ("HTTP " + r.status) };
+  } catch (e) { return { error: motivo(e) }; }
+}
+const lista = (xs) => (xs && xs.length) ? "<ul>" + xs.map((x) => "<li>" + escHtml(typeof x === "string" ? x : JSON.stringify(x)) + "</li>").join("") + "</ul>" : "<p class=que>—</p>";
+function htmlAnalisis(a) {
+  if (!a) return "";
+  if (a.error) return `<div class=err>No se pudo hacer el análisis: ${escHtml(a.error)}</div>`;
+  const r = a.resultado || {};
+  const pie = `<p class=count>Generado con <b>${escHtml(a.fuente)}</b> en ${escHtml(a.nodo)}${a.desde_cache ? " (reutilizado: se pidió hace menos de 15 min)" : ""}.</p>`;
+  if (a.tipo === "campanas") {
+    const camp = (r.campanas || []).map((c) => `<tr><td><b>${escHtml(c.nombre)}</b><div class=que>${escHtml(c.patron)}</div></td><td>${(c.numeros || []).map((x) => escHtml(fmtNum(x))).join("<br>")}</td><td>${chip(c.riesgo === "alto" ? false : null, "", "Alto", "Medio")}</td><td>${escHtml(c.evidencia)}<div class=que>👉 ${escHtml(c.recomendacion)}</div></td></tr>`).join("") || "<tr><td colspan=4>No se detectaron campañas</td></tr>";
+    return `<h2>Campañas detectadas (72 h)</h2><p class=stats>${escHtml(r.resumen)}</p><div class=scroll><table><thead><tr><th>Campaña</th><th>Números</th><th>Riesgo</th><th>Evidencia</th></tr></thead><tbody>${camp}</tbody></table></div>${pie}`;
+  }
+  return `<h2>${escHtml(r.titulo || "Resumen semanal")}</h2><p>${escHtml(r.resumen)}</p><h2>Hallazgos</h2>${lista(r.hallazgos)}<h2>Recomendaciones</h2>${lista(r.recomendaciones)}${pie}`;
+}
+async function paginaIA(username, env, analisis) {
+  const { data } = await pedirNodo(env, "/api/interno/ia?horas=24", true);
+  const v = data && data.vertex;
+  const form = (tipo, txt, desc) => `<form method=post action="/admin/ia"><input type=hidden name=tipo value="${tipo}"><button>${txt}</button></form><p class=que>${desc}</p>`;
+  let cuerpo = data
+    ? `<div class=kpis><div class=kpi><b>${chip(data.ollama, "Activa", "Apagada")}</b><span>IA local (Ollama, Lenovo)</span></div>`
+      + `<div class=kpi><b>${v && v.activo ? `${v.hora}/${v.max_hora}` : "—"}</b><span>llamadas a Gemini esta hora</span></div>`
+      + `<div class=kpi><b>${v && v.activo ? `${v.dia}/${v.max_dia}` : "—"}</b><span>llamadas a Gemini hoy (24 h)</span></div>`
+      + `<div class=kpi><b>${v && v.activo ? `${v.profundo_dia}/${v.max_profundo_dia}` : "—"}</b><span>análisis profundos hoy</span></div></div>`
+      + `<p class=stats>Gemini: ${v && v.activo ? `<code>${escHtml(v.modelo)}</code> · región <code>${escHtml(v.region)}</code>` : "apagado en el nodo que respondió"}</p>`
+    : "<p class=nota>Sin datos de los nodos.</p>";
+  cuerpo += `<div class=ctrl><span class=lbl>Análisis profundo (a demanda, gasta cupo de Gemini)</span><div class=grupo style="margin-top:10px">`
+    + form("campanas", "🔎 Detectar campañas", "Busca números que parecen la misma operación en las últimas 72 h.")
+    + form("semanal", "🗓️ Resumen semanal", "Explica la semana para no técnicos y la compara con la anterior.") + "</div></div>";
+  cuerpo += htmlAnalisis(analisis);
+  const filas = data && data.uso && data.uso.length ? data.uso.map((u) => `<tr><td>${escHtml(u.proveedor)}</td><td>${escHtml(u.tipo)}</td><td>${escHtml(u.resultado)}</td><td>${escHtml(u.llamadas)}</td><td>${escHtml(u.tokens_entrada)} / ${escHtml(u.tokens_salida)}</td></tr>`).join("") : "<tr><td colspan=5>Sin uso registrado en 24 h</td></tr>";
+  cuerpo += `<h2>Uso de IA (24 h)</h2><div class=scroll><table><thead><tr><th>Proveedor</th><th>Para qué</th><th>Resultado</th><th>Llamadas</th><th>Tokens entrada / salida</th></tr></thead><tbody>${filas}</tbody></table></div>`
+    + `<p class=count>Por qué es híbrida (costo, privacidad, disponibilidad): <a href="https://github.com/juan-student1/surprised-system/blob/main/docs/16_VERTEX_AI.md">docs/16_VERTEX_AI.md</a>.</p>`;
+  return marco(username, "/admin/ia", cuerpo);
 }
 
 // Pestaña Ventas (JM): leads del formulario "Para empresas". Datos personales: solo aquí, nunca en público.
@@ -460,6 +506,12 @@ async function handleAdmin(req, env, url) {
     if (valid) return irA("/admin");
     return htmlAdmin(loginHtml("", Boolean(totp)));
   }
+  if (req.method === "POST" && url.pathname === "/admin/ia") {
+    if (!valid) return irA("/admin/login");
+    if (!mismoOrigen(req, url)) return new Response("Origen no permitido", { status: 403 });
+    const tipo = new URLSearchParams(await req.text()).get("tipo") === "semanal" ? "semanal" : "campanas";
+    return htmlAdmin(await paginaIA(user, env, await pedirAnalisis(env, tipo)));
+  }
   if (req.method === "POST" && url.pathname === "/admin/control") {
     if (!valid) return irA("/admin/login");
     if (!mismoOrigen(req, url)) return new Response("Origen no permitido", { status: 403 });
@@ -483,6 +535,7 @@ async function handleAdmin(req, env, url) {
   if (url.pathname === "/admin/arquitectura") return htmlAdmin(await paginaArquitectura(user, env));
   if (url.pathname === "/admin/seguridad") return htmlAdmin(await paginaSeguridad(user, env));
   if (url.pathname === "/admin/ventas") return htmlAdmin(await paginaVentas(user, env));
+  if (url.pathname === "/admin/ia") return htmlAdmin(await paginaIA(user, env, null));
   const d = await datosPanel(env);
   return htmlAdmin(panelHtml(user, d));
 }
@@ -497,7 +550,7 @@ export default {
     // y /api/control solo lo usa el propio gateway (con CONTROL_TOKEN), nunca desde afuera.
     if (url.pathname === "/login") return cors(irA("/admin/login"));
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
-      const conocida = ["/admin", "/admin/login", "/admin/salir", "/admin/control", ...PESTANAS.map((p) => p[0])].includes(url.pathname);
+      const conocida = ["/admin", "/admin/login", "/admin/salir", "/admin/control", ...PESTANAS.map((p) => p[0])].includes(url.pathname);  // incluye /admin/ia (GET y POST)
       if (!conocida || !env.ADMIN_USER || !env.ADMIN_HASH) return cors(json({ error: "No encontrado" }, 404));
       if (limitado("admin:" + ip, 30)) return cors(json({ error: "Demasiadas peticiones. Espera un minuto." }, 429, { "Retry-After": "60" }));
       return cors(await handleAdmin(req, env, url));

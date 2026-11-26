@@ -24,6 +24,7 @@ Usuarios (web · Telegram · app Android)
          └─► JP · VM de JP por Tailscale Funnel (respaldo)  ── Cloud SQL Auth Proxy ──┴─► Cloud SQL Postgres 17 (centinela-db)
 Cloud Scheduler ──(OIDC, SA centinela-tareas)──► POST /tareas/latido en JE (cada minuto)
 JE/JP ──Tailscale──► Lenovo "centinela-ia": Ollama (modelo `centinela`) + n8n (bot de Telegram y avisos)
+JE ──(si Ollama no responde, con topes)──► Vertex AI Gemini (docs/16_VERTEX_AI.md)
 Secretos: Secret Manager (uno por secreto, permiso secreto por secreto)
 ```
 - **API** (`servidor/app/`): FastAPI, la misma en JE y JP. Capas en `centinela/`: `config` → `utilidades` (dominio puro)

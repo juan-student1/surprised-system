@@ -9,7 +9,8 @@ import logging
 import os
 from datetime import datetime, timezone
 
-VERSION = "1.6.0"
+VERSION = "1.7.0"
+# v1.7.0 = IA híbrida: Ollama primero, Vertex AI Gemini de respaldo con topes, y análisis profundo a demanda.
 # v1.6.0 = formulario de leads (/api/leads), métricas de seguridad por hora y rutas internas del panel (/api/interno/*).
 # v1.5.0 = puede correr en Cloud Run (tareas por Cloud Scheduler + IA por proxy de Tailscale) con Cloud SQL.
 # v1.4.0 = misma API que antes, solo reorganizada en capas (config/utils/db/ia/servicios/auth/rutas).
@@ -48,6 +49,16 @@ TAREAS_AUDIENCIA = os.getenv("TAREAS_AUDIENCIA", "centinela-tareas")
 # En Cloud Run la IA del Lenovo se alcanza por el proxy HTTP de Tailscale (modo userspace)
 OLLAMA_PROXY = os.getenv("OLLAMA_PROXY", "") or None
 TS_SOCKET = os.getenv("TS_SOCKET", "")
+# Vertex AI Gemini: respaldo de Ollama y "análisis profundo" a demanda (docs/16_VERTEX_AI.md).
+# Sin VERTEX_PROYECTO queda apagado (así corre JP, que no tiene la cuenta de servicio con el rol).
+VERTEX_PROYECTO = os.getenv("VERTEX_PROYECTO", "")
+VERTEX_REGION = os.getenv("VERTEX_REGION", "global")
+VERTEX_MODELO = os.getenv("VERTEX_MODELO", "gemini-3.8-flash")
+VERTEX_MAX_HORA = int(os.getenv("VERTEX_MAX_HORA", "20"))              # tope de llamadas a Gemini por hora
+VERTEX_MAX_DIA = int(os.getenv("VERTEX_MAX_DIA", "100"))               # tope por día (protege la factura)
+VERTEX_MAX_PROFUNDO_DIA = int(os.getenv("VERTEX_MAX_PROFUNDO_DIA", "10"))  # análisis profundos por día
+VERTEX_TIMEOUT = float(os.getenv("VERTEX_TIMEOUT", "20"))              # segundos por llamada normal
+VERTEX_CACHE_SEG = int(os.getenv("VERTEX_CACHE_SEG", "3600"))          # misma pregunta = misma respuesta 1 h
 POOL_MIN = int(os.getenv("POOL_MIN", "0" if ES_NEON else "1"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 LIMITE_GLOBAL = int(os.getenv("LIMITE_GLOBAL", "150"))  # peticiones/min por IP a este nodo
