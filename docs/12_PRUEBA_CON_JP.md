@@ -1,7 +1,7 @@
 # 12 · Lo que falta para probar con JP (failover completo)
 
-> Todo lo de **nuestro lado** (Lenovo, gateway, código) ya está hecho. Esto es lo único pendiente:
-> 1) actualizar JE, 2) dejar JP igual que JE, 3) probar juntos.
+> Todo lo de **nuestro lado** (Lenovo, gateway, JE en Cloud Run, código) ya está hecho. Esto es lo único pendiente:
+> 1) conectar JP a Cloud SQL (`nube/07_llave_jp.sh` + `servidor/conectar_cloudsql.sh`, doc 15 §3), 2) dejar JP igual que JE, 3) probar juntos.
 
 ## Qué se arregló (2026‑11‑17)
 | Problema | Causa | Arreglo |
@@ -12,11 +12,11 @@
 | Panel con clave `profe2024` | Clave débil y panel también abierto directo en el Funnel de JE | Clave nueva fuerte (1Password), sesión de 20 min atada al navegador, anti‑CSRF, bloqueo compartido, panel **solo** en el gateway (en los nodos da 404) |
 | Bot de Telegram mudo | El dominio público del Funnel del Lenovo no existía | `sudo bash ia/reparar_lenovo.sh` en el Lenovo |
 
-## 1 · Actualizar JE (Cloud Shell → dentro de la VM)
+## 1 · JE ya está al día (Cloud Run)
+Desde el 2026‑11‑18 JE corre en **Cloud Run** y se actualiza con `bash nube/05_desplegar.sh` (ver `15_CLOUD_RUN_CLOUD_SQL_IAM.md`). Comprobar:
 ```bash
-gcloud compute ssh centinela-je --zone=us-east1-b --tunnel-through-iap
-cd ~/surprised-system && sudo bash servidor/actualizar.sh
-curl -s localhost:8000/admin -o /dev/null -w "%{http_code}\n"     # debe dar 404 (el panel vive en el gateway)
+curl -s https://centinela.juan-gallego-sec.workers.dev/health        # "nodo":"JE" y la versión actual
+curl -s -o /dev/null -w "%{http_code}\n" https://centinela.juan-gallego-sec.workers.dev/api/interno/leads   # 404: rutas internas cerradas
 ```
 
 ## 2 · Dejar JP igual que JE (lo hace JP)
@@ -28,7 +28,7 @@ En `/opt/centinela/.env` de JP deben estar (mismos valores que JE salvo el nombr
 ```
 NODO_NOMBRE=JP
 NODO_ROL=respaldo
-DATABASE_URL=<el mismo pooler de Supabase>
+DATABASE_URL=<lo pone servidor/conectar_cloudsql.sh: Cloud SQL por el Auth Proxy local>
 OLLAMA_URL=http://centinela-ia:11434
 OLLAMA_MODEL=centinela
 LLAMADAS_TOKEN=<la misma de JE>
