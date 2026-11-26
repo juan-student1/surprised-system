@@ -1,12 +1,12 @@
 """CENTINELA · servicios: rate limiting, Telegram, reportes, tareas de fondo."""
-import asyncio, json, logging, time
+import asyncio, json, time
 from collections import defaultdict, deque
 from datetime import datetime, timezone
 from fastapi import BackgroundTasks, HTTPException
 import httpx
 from .config import NODO, ROL, VERSION, INICIO, LATIDO_SEG, TELEGRAM_TOKEN, TELEGRAM_API, TELEGRAM_CHAT_ID, CATEGORIAS, CAMPANA_REPORTEROS, CAMPANA_VENTANA_MIN, log
 from .db import pool, q, local, evento, guardar_reporte, ficha, marcar_db
-from .utilidades import normalizar, hash_reportero, ip_tailscale, metricas, texto_ficha
+from .utilidades import normalizar, hash_reportero, ip_tailscale, metricas
 from .ia import clasificar_con_ia, ollama_disponible
 
 # ------ Rate limiting (defensa en profundidad) ------

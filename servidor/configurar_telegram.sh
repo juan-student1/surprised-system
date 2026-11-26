@@ -43,5 +43,5 @@ systemctl restart centinela
 echo
 echo -e "\e[1;32m✔ Listo. Guarda esta clave para el celular (y para JP):\e[0m"
 echo -e "\e[1;33m   LLAMADAS_TOKEN = $CLAVE\e[0m"
-for i in $(seq 1 20); do curl -sf localhost:8000/health >/dev/null && break; sleep 1; done
+for _ in $(seq 1 20); do curl -sf localhost:8000/health >/dev/null && break; sleep 1; done
 curl -s localhost:8000/health; echo

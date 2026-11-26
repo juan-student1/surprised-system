@@ -43,7 +43,7 @@ fi
 
 chmod 600 "$ENV"; chown centinela:centinela "$ENV"
 systemctl restart centinela
-for i in $(seq 1 20); do curl -sf localhost:8000/health >/dev/null && break; sleep 1; done
+for _ in $(seq 1 20); do curl -sf localhost:8000/health >/dev/null && break; sleep 1; done
 echo
 echo "✔ Panel configurado. Entra por el link del gateway, ruta /admin"
 echo "  Ej: https://centinela.juan-gallego-sec.workers.dev/admin"

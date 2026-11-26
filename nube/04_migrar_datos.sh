@@ -11,7 +11,7 @@ asegurar_proxy
 azul "Abriendo túnel seguro a Cloud SQL (Auth Proxy, autenticado con tu cuenta)"
 cloud-sql-proxy --gcloud-auth --address 127.0.0.1 --port 6543 "$CONEXION" >/tmp/proxy.log 2>&1 &
 PID_PROXY=$!; trap 'kill $PID_PROXY 2>/dev/null' EXIT
-for i in $(seq 1 20); do grep -q "ready for new connections" /tmp/proxy.log && break; sleep 1; done
+for _ in $(seq 1 20); do grep -q "ready for new connections" /tmp/proxy.log && break; sleep 1; done
 grep -q "ready for new connections" /tmp/proxy.log || { echo "❌ El túnel no abrió:"; cat /tmp/proxy.log; exit 1; }
 
 azul "Origen: el DATABASE_URL de Supabase que ya funciona en la VM $VM (no se imprime)"

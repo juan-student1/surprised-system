@@ -49,7 +49,7 @@ sudo tailscale funnel --bg --set-path /webhook http://127.0.0.1:$PUERTO/webhook
 sudo tailscale funnel --bg --set-path /webhook-test http://127.0.0.1:$PUERTO/webhook-test
 
 azul "4/4 Esperando a que n8n arranque (1-3 min la primera vez)"
-for i in $(seq 1 90); do curl -sf localhost:$PUERTO/healthz >/dev/null && break; sleep 2; done
+for _ in $(seq 1 90); do curl -sf localhost:$PUERTO/healthz >/dev/null && break; sleep 2; done
 
 verde "\n============================================================"
 verde "  n8n LISTO"

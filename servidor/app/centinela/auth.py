@@ -10,7 +10,7 @@ creados con `sudo bash servidor/configurar_admin.sh`. Sin eso, /admin responde
 """
 import base64, hashlib, hmac, json, os, struct, time
 from collections import defaultdict
-from fastapi import Form, Request, Response
+from fastapi import Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from .config import SAL, NODO, log

@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, log, MANTENIMIENTO, EN_CLOUD_RUN
+from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, MANTENIMIENTO, EN_CLOUD_RUN
 from centinela.db import pool, local, evento
 from centinela.servicios import latido, sincronizador, vigilar_ia, latir_una_vez, _exceso
 from centinela.utilidades import ip_cliente, viene_del_gateway

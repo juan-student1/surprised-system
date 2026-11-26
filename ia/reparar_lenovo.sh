@@ -25,7 +25,7 @@ Environment="OLLAMA_FLASH_ATTENTION=1"
 EOF
 systemctl daemon-reload
 systemctl restart ollama
-for i in $(seq 1 30); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 1; done
+for _ in $(seq 1 30); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 1; done
 verde "   Ollama: 1 petición a la vez, 10 min en memoria"
 ufw status | grep 11434 || echo "   (ufw sin reglas para 11434: corre bash ia/instalar_ollama.sh qwen2.5:3b)"
 
@@ -42,7 +42,7 @@ tailscale funnel --bg --set-path /webhook-test "http://127.0.0.1:$PUERTO/webhook
 DNS="$(tailscale status --json | python3 -c 'import json,sys;print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))')"
 azul "3/4 Esperando a que $DNS exista en Internet (hasta 5 min)"
 OK=0
-for i in $(seq 1 60); do
+for _ in $(seq 1 60); do
   if curl -s -m 5 -H 'accept: application/dns-json' "https://cloudflare-dns.com/dns-query?name=$DNS&type=A" | grep -q '"Answer"'; then OK=1; break; fi
   sleep 5
 done
@@ -54,7 +54,7 @@ fi
 
 azul "4/4 Reiniciando n8n (vuelve a registrar el webhook de Telegram)"
 docker restart centinela-n8n >/dev/null
-for i in $(seq 1 60); do curl -sf "localhost:$PUERTO/healthz" >/dev/null && break; sleep 2; done
+for _ in $(seq 1 60); do curl -sf "localhost:$PUERTO/healthz" >/dev/null && break; sleep 2; done
 sleep 5
 tailscale funnel status
 verde "\n============================================================"
