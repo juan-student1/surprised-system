@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `feat/vertex-ia` (Fase 3)
+> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `docs/estado-fase3`
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -19,18 +19,18 @@
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| **Fase 3 · IA híbrida** (código listo, **sin activar**): Ollama → Vertex AI Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas; topes 20/h, 100/día, 10 análisis profundos/día; caché 1 h; timeout 20 s; análisis profundo a demanda (campañas 72 h, resumen semanal) desde la pestaña **IA** del panel; API v1.7.0; migración `db/005`; `nube/11_vertex.sh`; doc 16; 104 tests | `feat/vertex-ia` | JE |
+| **Fase 3 · IA híbrida** (PR #4, merge; **desplegada con Vertex apagado**: migración `db/005` ✅, JE v1.7.0 revisión `centinela-je-00009` ✅, gateway con pestaña IA ✅; chat verificado por Ollama). **Falta encender Vertex** (pasos 0, 2, 3 y 4 de abajo, los corre Juan): Ollama → Vertex AI Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas; topes 20/h, 100/día, 10 análisis profundos/día; caché 1 h; timeout 20 s; análisis profundo a demanda (campañas 72 h, resumen semanal) desde la pestaña **IA** del panel; API v1.7.0; migración `db/005`; `nube/11_vertex.sh`; doc 16; 104 tests | `feat/vertex-ia` | JE |
 | Revisar el panel con login (Arquitectura, Seguridad, Ventas) y borrar el lead de prueba #1 (`delete from leads where id = 1;`) | — | JE |
 | Rol de solo lectura de JP: `PROYECTO=ID_DEL_PROYECTO CORREO_JP=… bash nube/09_lectura_jp.sh` | — | JE (correo de JP por privado) |
 | JP actualiza su nodo cuando haga el bloque 2 (`sudo bash servidor/actualizar.sh`); JP corre sin Vertex | — | JP |
 
 ### Para activar la Fase 3 (en orden, cada paso con "ok" de Juan)
 0. **Precio:** consola → Vertex AI → Model Garden → Gemini 3.8 Flash → anotar el precio en `docs/16_VERTEX_AI.md` §4 (no se pudo leer de la documentación pública).
-1. `bash nube/10_migracion.sh db/005_ia_uso.sql` — tabla `ia_uso_hora`. Sin costo.
+1. ~~`bash nube/10_migracion.sh db/005_ia_uso.sql`~~ ✅ aplicada.
 2. `bash nube/11_vertex.sh dar` — habilita la API de Vertex AI y da `roles/aiplatform.user` a `centinela-run`. Sin costo por sí solo.
 3. `bash nube/11_vertex.sh probar` — una llamada mínima (centavos) para confirmar modelo y región.
-4. `bash nube/05_desplegar.sh` — JE v1.7.0 con Vertex encendido.
-5. `cd gateway && npx wrangler deploy` — pestaña IA.
+4. `bash nube/05_desplegar.sh` — redespliega JE: al ver la API habilitada enciende Vertex (`/health` → `"vertex":true`).
+5. ~~`cd gateway && npx wrangler deploy`~~ ✅ desplegado.
 6. Comprobar: apagar Ollama → chat con `"fuente":"vertex"` → contador en la pestaña IA.
 
 ## Pendiente ⏳
