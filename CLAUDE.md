@@ -91,4 +91,4 @@ cd gateway && npx wrangler dev                      # local
 | `db/` | Esquema y migraciones de Postgres |
 | `android/` | App "Centinela llamadas" |
 | `tests/` | pytest de la API |
-| `docs/` | Guías numeradas 00‑15 + `ESTADO_ACTUAL.md` + `roles/` |
+| `docs/` | Guías numeradas 00‑18 + `ESTADO_ACTUAL.md` + `roles/` |
