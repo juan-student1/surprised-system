@@ -25,8 +25,9 @@ Usuarios → Cloudflare Worker (failover) → JE principal (Cloud Run) ───
 10. [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) — IA en el Lenovo: Ollama + n8n + bot (paso a paso)
 11. [`docs/12_PRUEBA_CON_JP.md`](docs/12_PRUEBA_CON_JP.md) — lo que falta con JP + prueba de failover
 12. [`docs/14_AUDITORIA_Y_MEJORAS.md`](docs/14_AUDITORIA_Y_MEJORAS.md) — auditoría de seguridad, nota de la web y plan de mejoras
-13. [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) — **tablero: hecho / en curso / pendiente**
-14. Roles: [`JE · Arquitectura`](docs/roles/JE_ARQUITECTURA.md) · [`JP · Seguridad`](docs/roles/JP_SEGURIDAD.md) · [`JM · Ventas`](docs/roles/JM_VENTAS.md)
+13. [`docs/16_VERTEX_AI.md`](docs/16_VERTEX_AI.md) — IA híbrida: Ollama local + Vertex AI Gemini de respaldo
+14. [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) — **tablero: hecho / en curso / pendiente**
+15. Roles: [`JE · Arquitectura`](docs/roles/JE_ARQUITECTURA.md) · [`JP · Seguridad`](docs/roles/JP_SEGURIDAD.md) · [`JM · Ventas`](docs/roles/JM_VENTAS.md)
 
 **En vivo:** https://centinela.juan-gallego-sec.workers.dev
 
