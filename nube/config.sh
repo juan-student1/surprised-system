@@ -1,3 +1,4 @@
+# shellcheck shell=bash disable=SC2034  # se carga con source; las variables las usan los otros scripts
 # =====================================================================
 #  CENTINELA · Variables comunes de los scripts de nube/ (Cloud Shell)
 #  No se ejecuta solo: lo cargan los demás scripts con `source`.

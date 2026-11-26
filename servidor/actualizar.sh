@@ -13,7 +13,7 @@ principal() {
   /opt/centinela/venv/bin/pip install -q -r /opt/centinela/requirements.txt
   chown -R centinela:centinela /opt/centinela
   systemctl restart centinela
-  for i in $(seq 1 20); do
+  for _ in $(seq 1 20); do
     if curl -sf localhost:8000/health; then echo; echo "✔ Actualizado"; exit 0; fi
     sleep 1
   done

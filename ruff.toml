@@ -1,0 +1,9 @@
+# Ruff (lint de Python). Reglas base de ruff: errores reales (F) y sintaxis/estilo grave (E4, E7, E9).
+# Se toleran varias sentencias por línea y varios imports por línea: es el estilo compacto del proyecto.
+target-version = "py312"
+line-length = 160
+extend-exclude = ["gateway/node_modules"]
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E401", "E701", "E702", "E741"]

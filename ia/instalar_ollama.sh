@@ -43,7 +43,7 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable --now ollama
 sudo systemctl restart ollama
-for i in $(seq 1 30); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 1; done
+for _ in $(seq 1 30); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 1; done
 
 azul "4/5 Firewall: el puerto 11434 solo se abre hacia Tailscale"
 if command -v ufw >/dev/null && sudo ufw status | grep -q "Status: active"; then

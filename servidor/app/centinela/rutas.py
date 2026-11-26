@@ -9,7 +9,7 @@ from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, 
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
 from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha
 from .ia import ollama_disponible, ollama_chat
-from .servicios import registrar_reporte, telegram_enviar, _exceso, tareas_programadas
+from .servicios import registrar_reporte, telegram_enviar, tareas_programadas
 from . import auth as authmod
 
 RE_NUM = re.compile(r"(?:\+|00)?\d[\d\s\-().]{5,17}\d")

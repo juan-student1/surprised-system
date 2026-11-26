@@ -59,7 +59,7 @@ printf 'DATABASE_URL=postgresql://centinela_jp:%s@127.0.0.1:%s/centinela\n' "$CL
 unset CLAVE
 systemctl restart centinela
 
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   if curl -sf localhost:8000/health | grep -q '"db":true'; then echo "✅ JP conectado a Cloud SQL"; exit 0; fi; sleep 1
 done
 echo "✘ La API no ve la BD. Revisa: journalctl -u cloudsql-proxy -n 30 --no-pager"
