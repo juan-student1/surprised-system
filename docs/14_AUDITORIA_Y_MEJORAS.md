@@ -13,15 +13,17 @@
 
 ## Hallazgos (resumen sin detalles explotables)
 
+> Estado actualizado el 2026‑11‑25. Seguimiento, STRIDE y OWASP API Top 10: [`roles/JP_SEGURIDAD.md`](roles/JP_SEGURIDAD.md).
+
 | ID | Sev. | Área | Resumen | Estado |
 |---|---|---|---|---|
-| H1 | Alto | API | La identidad de quien reporta se puede alterar y eso afecta el puntaje de riesgo | Abierto |
-| H2 | Bajo (era Alto) | Dependencias | `python-multipart` desactualizado con CVE de denegación de servicio | Mitigado: el panel del nodo quedó apagado y ya no se alcanza; falta subir la versión |
-| M1 | Medio | Arquitectura | Los nodos aceptan tráfico directo sin pasar por el gateway y confían en encabezados de IP | Abierto |
-| M2 | Medio | Privacidad | El registro de llamadas reales expone más datos de los necesarios al público | Abierto |
-| B1 | Bajo | Privacidad | Un endpoint público muestra datos internos de los nodos | Abierto |
+| H1 | Alto | API | La identidad de quien reporta se puede alterar y eso afecta el puntaje de riesgo | ✅ JE y gateway (bloque 2) · ⏳ JP |
+| H2 | Bajo (era Alto) | Dependencias | `python-multipart` desactualizado con CVE de denegación de servicio | ✅ Resuelto (0.0.32) |
+| M1 | Medio | Arquitectura | Los nodos aceptan tráfico directo sin pasar por el gateway y confían en encabezados de IP | ✅ JE (puerta única) · ⏳ JP |
+| M2 | Medio | Privacidad | El registro de llamadas reales expone más datos de los necesarios al público | ✅ Resuelto (bloque 1) |
+| B1 | Bajo | Privacidad | Un endpoint público muestra datos internos de los nodos | ✅ Resuelto (bloque 1) |
 | B2 | Bajo | Autenticación | La firma de sesión tenía un valor por defecto si faltaba la clave | ✅ Resuelto en el gateway (`b97a9c3`); en el nodo el panel quedó apagado |
-| B3 | Bajo | API | Un token se acepta por URL y se compara sin tiempo constante | Abierto |
+| B3 | Bajo | API | Un token se acepta por URL y se compara sin tiempo constante | Parcial: tiempo constante ✅; token por URL ⏳ |
 | B4 | Bajo | Repo público | Datos personales menores en el repo/historial | Abierto |
 | B5 | Bajo | Disponibilidad | Límites de peticiones en memoria; chat costoso hacia la IA (mejorado: el chat responde al instante lo que no es del tema) | Abierto |
 | B6 | Bajo | Autenticación | El bloqueo global del login (nuevo) permite que un tercero bloquee temporalmente el panel | Aceptable para la demo; documentar |

@@ -173,6 +173,39 @@ $("#form-reporte").addEventListener("submit", async (e) => {
   } finally { btn.disabled = false; }
 });
 
+/* ---------- para empresas: formulario de contacto (leads) ---------- */
+$("#form-lead").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, out = $("#l-resultado");
+  const btn = e.submitter || f.querySelector("button");
+  out.className = "resultado";
+  if (!f.checkValidity()) {
+    out.textContent = !$("#l-acepta").checked ? "Marca la autorización de datos para que podamos contactarte." :
+      "Revisa tu nombre y tu correo.";
+    out.classList.add("error");
+    f.reportValidity();
+    return;
+  }
+  const val = (id) => $(id).value.trim() || null;
+  const cuerpo = {
+    nombre: val("#l-nombre"), empresa: val("#l-empresa"), correo: val("#l-correo"), telefono: val("#l-telefono"),
+    segmento: $("#l-segmento").value, plan: $("#l-plan").value, mensaje: val("#l-mensaje"),
+    acepta_datos: $("#l-acepta").checked, sitio_web: $("#l-sitio").value || null,
+  };
+  btn.disabled = true; out.textContent = "Enviando…";
+  try {
+    await pedir("/api/leads", { method: "POST", body: JSON.stringify(cuerpo) });
+    out.textContent = "¡Gracias! Te escribimos en menos de un día hábil.";
+    out.classList.add("ok");
+    f.reset();
+  } catch (err) {
+    out.textContent = err.message.includes("Ya recibimos") ? err.message :
+      err.message === "Correo inválido" ? "Ese correo no parece válido." :
+      "No pudimos enviar tu mensaje. Intenta de nuevo en unos minutos.";
+    out.classList.add("error");
+  } finally { btn.disabled = false; }
+});
+
 /* ---------- comunidad ---------- */
 function consultarDesdeLista(numero) {
   inputNum.value = numero; inputNum.dispatchEvent(new Event("input"));

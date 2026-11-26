@@ -1,4 +1,4 @@
-"""CENTINELA · capa de datos (Supabase + SQLite local degradado)."""
+"""CENTINELA · capa de datos (Postgres en Cloud SQL + SQLite local para el modo degradado)."""
 import json, sqlite3, time
 from datetime import datetime, timezone
 from psycopg.rows import dict_row

@@ -2,7 +2,7 @@
 
 Sistema distribuido y tolerante a fallos que identifica llamadas spam y estafas telefónicas con reportes de la comunidad, puntaje de riesgo e IA local.
 
-**Grupo:** JE (Juan) · JP — Ingeniería de Sistemas, semestre 8.
+**Grupo:** JE (Juan, arquitectura) · JP (seguridad) · JM (ventas) — Ingeniería de Sistemas, semestre 8.
 
 ```
 Usuarios → Cloudflare Worker (failover) → JE principal (Cloud Run) ─────┐
@@ -25,6 +25,8 @@ Usuarios → Cloudflare Worker (failover) → JE principal (Cloud Run) ───
 10. [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) — IA en el Lenovo: Ollama + n8n + bot (paso a paso)
 11. [`docs/12_PRUEBA_CON_JP.md`](docs/12_PRUEBA_CON_JP.md) — lo que falta con JP + prueba de failover
 12. [`docs/14_AUDITORIA_Y_MEJORAS.md`](docs/14_AUDITORIA_Y_MEJORAS.md) — auditoría de seguridad, nota de la web y plan de mejoras
+13. [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) — **tablero: hecho / en curso / pendiente**
+14. Roles: [`JE · Arquitectura`](docs/roles/JE_ARQUITECTURA.md) · [`JP · Seguridad`](docs/roles/JP_SEGURIDAD.md) · [`JM · Ventas`](docs/roles/JM_VENTAS.md)
 
 **En vivo:** https://centinela.juan-gallego-sec.workers.dev
 
@@ -44,6 +46,8 @@ web/                       Web responsive (se publica con el gateway)
 ia/n8n/                    Flujos de n8n para importar (bot + avisos)
 db/002_llamadas.sql        Migración: llamadas reales
 db/003_cloudsql.sql        Migración: ajustes para Cloud SQL (RLS, permisos de centinela_jp)
+db/004_leads_y_seguridad.sql  Migración: leads de empresas y métricas de seguridad por hora
+tests/                     Tests de la API (pytest) · CI en .github/workflows/ci.yml
 docs/                      Guías paso a paso
 ```
 

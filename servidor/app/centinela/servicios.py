@@ -18,6 +18,42 @@ def _exceso(cubeta: str, ip: str, maximo: int, ventana: int) -> bool:
     if len(cola) >= maximo: return True
     cola.append(ahora); return False
 
+# ------ Métricas de seguridad (pestaña "Seguridad" del panel) ------
+# Cada respuesta 401/403/429 suma 1 en memoria por (hora, código, grupo de ruta). Se vuelca a la tabla
+# seguridad_hora en cada latido: un ataque nunca genera una escritura a la BD por petición.
+CODIGOS_SEGURIDAD = (401, 403, 429)
+_RUTAS_CONOCIDAS = {"numero", "reportar", "top", "recientes", "stats", "cluster", "chat", "llamada", "llamadas",
+                    "bot", "control", "leads", "interno"}
+_bloqueos: dict[tuple[str, int, str], int] = defaultdict(int)
+
+def grupo_ruta(path: str) -> str:
+    partes = path.strip("/").split("/")
+    if partes[0] == "api" and len(partes) > 1:
+        return "/api/" + (partes[1] if partes[1] in _RUTAS_CONOCIDAS else "otra")
+    if partes[0] in ("tareas", "admin", "health"):
+        return "/" + partes[0]
+    return "otra"
+
+def contar_bloqueo(codigo: int, path: str):
+    if codigo not in CODIGOS_SEGURIDAD: return
+    hora = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).isoformat()
+    _bloqueos[(hora, codigo, grupo_ruta(path))] += 1
+
+def volcar_seguridad() -> int:
+    """Suma los contadores en memoria a seguridad_hora. Si la BD falla, se conservan para el próximo latido."""
+    if not _bloqueos: return 0
+    lote = dict(_bloqueos); _bloqueos.clear()
+    try:
+        with pool.connection(timeout=4) as conn:
+            for (hora, codigo, ruta), n in lote.items():
+                conn.execute("""insert into seguridad_hora (hora, nodo, codigo, ruta, total) values (%s,%s,%s,%s,%s)
+                                on conflict (hora, nodo, codigo, ruta) do update set total = seguridad_hora.total + excluded.total""",
+                             (hora, NODO, codigo, ruta, n))
+        return len(lote)
+    except Exception as e:
+        for k, n in lote.items(): _bloqueos[k] += n
+        log.warning("No se pudieron guardar las métricas de seguridad: %s", e); return 0
+
 def limitar(ip: str, maximo=10, ventana=600):
     if _exceso("reportes", ip, maximo, ventana):
         raise HTTPException(429, "Demasiados reportes, intenta en unos minutos")
@@ -77,7 +113,9 @@ def latir_una_vez() -> bool:
     m = metricas()
     try:
         q("""insert into nodos (nombre, rol, ip_tailscale, hostname, cpu, ram, disco, temp, version, iniciado, ultimo_latido) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now()) on conflict (nombre) do update set rol=excluded.rol, ip_tailscale=excluded.ip_tailscale, hostname=excluded.hostname, cpu=excluded.cpu, ram=excluded.ram, disco=excluded.disco, temp=excluded.temp, version=excluded.version, iniciado=excluded.iniciado, ultimo_latido=now()""", (NODO, ROL, _host["ip"], _host["nombre"], m["cpu"], m["ram"], m["disco"], m["temp"], VERSION, INICIO))
-        marcar_db(True); return True
+        marcar_db(True)
+        if pool is not None: volcar_seguridad()
+        return True
     except Exception as e:
         marcar_db(False); log.warning("Latido no enviado (BD caída?): %s", e); return False
 

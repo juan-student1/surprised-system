@@ -246,6 +246,50 @@ async function datosPanel(env){
   }
   return { stats: null, top: [], nodo: null };
 }
+// ---------- Panel: pestañas (Resumen · Arquitectura [JE] · Seguridad [JP] · Ventas [JM]) ----------
+// Todo se arma en el servidor: cero JavaScript en el navegador (compatible con la CSP script-src 'self').
+const PESTANAS = [["/admin", "Resumen"], ["/admin/arquitectura", "Arquitectura"], ["/admin/seguridad", "Seguridad"], ["/admin/ventas", "Ventas"]];
+const REPO_DOCS = "https://github.com/juan-student1/surprised-system/blob/main/docs/roles/";
+const PANEL_CSS = " .hdr{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:4px} .top{max-width:1100px;margin:0 auto} table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px} th,td{padding:8px;border-bottom:1px solid #283252;text-align:left;vertical-align:top} th{color:#9ba5bd} a{color:#7a93ff} .stats{color:#9ba5bd;font-size:14px;margin:0 0 8px} .ctrl{background:#161e33;border:1px solid #283252;border-radius:12px;padding:16px;margin:12px 0 18px} .ctrl-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px} .act{font-size:22px;font-weight:700;color:#7dffa9;margin-top:2px} .lbl{color:#9ba5bd;font-size:12px;text-transform:uppercase;letter-spacing:.04em} .grupo{display:flex;gap:10px;flex-wrap:wrap} .ctrl form{display:inline;margin:0} .ctrl button{width:auto;margin-top:0;padding:10px 14px;font-size:14px} .rojo{background:#cc2539} .verde{background:#1f9d57} .nota{color:#9ba5bd;font-size:13px;margin:12px 0 0} .count{color:#9ba5bd;font-size:12px;margin-top:14px}"
+  + " .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 6px;border-bottom:1px solid #283252} .tabs a{padding:9px 14px;border-radius:8px 8px 0 0;color:#9ba5bd;text-decoration:none;font-weight:600;font-size:14px} .tabs a[aria-current=page]{background:#161e33;color:#e7ebf4;border:1px solid #283252;border-bottom-color:#161e33;margin-bottom:-1px}"
+  + " .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700} .ok{background:#0f2a1a;color:#7dffa9} .mal{background:#3a0f16;color:#ff8a98} .gris{background:#232c45;color:#9ba5bd}"
+  + " .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0} .kpi{background:#161e33;border:1px solid #283252;border-radius:12px;padding:12px} .kpi b{display:block;font-size:24px} .kpi span{color:#9ba5bd;font-size:12px}"
+  + " .barra{height:8px;border-radius:4px;background:#cc2539;min-width:2px} .que{color:#9ba5bd;font-size:13px} .scroll{overflow-x:auto} h2{font-size:17px;margin:22px 0 4px}";
+
+function chip(ok, si = "En línea", no = "Caído", nada = "Sin datos") {
+  return ok === true ? `<span class="chip ok">${si}</span>` : ok === false ? `<span class="chip mal">${no}</span>` : `<span class="chip gris">${nada}</span>`;
+}
+function horaCO(iso, conDia = true) {
+  try {
+    return new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", ...(conDia ? { day: "2-digit", month: "short" } : {}) });
+  } catch { return escHtml(iso); }
+}
+function hace(seg) {
+  if (seg == null || isNaN(seg)) return "—";
+  return seg < 90 ? Math.round(seg) + " s" : seg < 5400 ? Math.round(seg / 60) + " min" : Math.round(seg / 3600) + " h";
+}
+function marco(username, actual, cuerpo) {
+  const tabs = PESTANAS.map(([href, txt]) => `<a href="${href}"${href === actual ? ' aria-current="page"' : ""}>${txt}</a>`).join("");
+  return "<!doctype html><html lang=es><head><meta charset=utf-8><meta name=viewport content=\"width=device-width, initial-scale=1\"><title>Centinela · Panel</title><style>" + LOGIN_CSS + PANEL_CSS + "</style></head><body><div class=top>"
+    + "<div class=hdr><h1>Panel de Centinela</h1><a href=\"/admin/salir\">Salir (" + escHtml(username) + ")</a></div>"
+    + "<nav class=tabs aria-label=\"Pestañas del panel\">" + tabs + "</nav>" + cuerpo + "</div></body></html>";
+}
+
+// Pide una ruta a los nodos (sanos primero). Las rutas /api/interno/* llevan además el CONTROL_TOKEN.
+async function pedirNodo(env, ruta, interno = false) {
+  const sanos = [], marcados = [];
+  for (const n of nodos(env)) { if (await estaCaido(n)) marcados.push(n); else sanos.push(n); }
+  for (const n of [...sanos, ...marcados]) {
+    try {
+      const h = { "X-Centinela-Gateway": env.GATEWAY_SECRET || "1" };
+      if (interno) h["x-centinela-control"] = env.CONTROL_TOKEN || "";
+      const r = await conTimeout(n.base + ruta, { headers: h }, 8000);
+      if (r.ok && esDeCentinela(r)) return { data: await r.json(), nodo: n.nombre };
+    } catch (e) {}
+  }
+  return { data: null, nodo: null };
+}
+
 function panelHtml(username, d) {
   d = d || { stats: null, top: [], nodo: null };
   const act = d.nodo || "sin conexion";
@@ -256,15 +300,99 @@ function panelHtml(username, d) {
     ? d.top.map(function(f){return "<tr><td>" + escHtml(fmtNum(f.numero)) + "</td><td>" + escHtml(f.pais||"") + "</td><td>" + escHtml(f.score) + "</td><td>" + escHtml(f.nivel) + "</td><td>" + escHtml(f.total_reportes) + "</td><td>" + escHtml(CAT_PANEL[f.categoria_principal]||"—") + "</td></tr>";}).join("")
     : "<tr><td colspan=6>Sin numeros todavia</td></tr>";
   const btn = function(nodo, accion, clase, txt){ return '<form method=post action="/admin/control"><input type=hidden name=nodo value="' + nodo + '"><input type=hidden name=accion value="' + accion + '"><button class="' + clase + '">' + txt + '</button></form>'; };
-  const EXTRA = " .hdr{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:4px} .top{max-width:1100px;margin:0 auto} table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px} th,td{padding:8px;border-bottom:1px solid #283252;text-align:left} th{color:#9ba5bd} a{color:#7a93ff} .stats{color:#9ba5bd;font-size:14px;margin:0 0 8px} .ctrl{background:#161e33;border:1px solid #283252;border-radius:12px;padding:16px;margin:12px 0 18px} .ctrl-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px} .act{font-size:22px;font-weight:700;color:#7dffa9;margin-top:2px} .lbl{color:#9ba5bd;font-size:12px;text-transform:uppercase;letter-spacing:.04em} .grupo{display:flex;gap:10px;flex-wrap:wrap} .ctrl form{display:inline;margin:0} .ctrl button{width:auto;margin-top:0;padding:10px 14px;font-size:14px} .rojo{background:#cc2539} .verde{background:#1f9d57} .chico{padding:7px 11px;font-size:13px;opacity:.92} .jp{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center} .jp .lbl{margin-right:4px} .nota{color:#9ba5bd;font-size:13px;margin:12px 0 0} .count{color:#9ba5bd;font-size:12px;margin-top:14px}";
-  return "<!doctype html><html lang=es><head><meta charset=utf-8><meta name=viewport content=\"width=device-width, initial-scale=1\"><title>Centinela · Panel</title><style>" + LOGIN_CSS + EXTRA + "</style></head><body><div class=top>"
-    + "<div class=hdr><h1>Panel de Centinela</h1><a href=\"/admin/salir\">Salir (" + escHtml(username) + ")</a></div>"
-    + "<div class=ctrl><div class=ctrl-top><div><span class=lbl>Atendiendo ahora</span><div class=act>" + escHtml(act) + "</div></div>"
+  return marco(username, "/admin",
+    "<div class=ctrl><div class=ctrl-top><div><span class=lbl>Atendiendo ahora</span><div class=act>" + escHtml(act) + "</div></div>"
     + "<div class=grupo>" + btn("JE","pausar","rojo","⏸ Detener JE") + btn("JE","reactivar","verde","▶ Reactivar JE") + "</div></div>"
     + "<p class=nota>Detener JE lo deja de atender DE VERDAD (responde 503): el gateway enruta el tráfico a JP (otra máquina, otro internet). Reactívalo para repetir.</p></div>"
     + "<p class=stats>" + linea + " · datos vía " + escHtml(act) + "</p>"
-    + "<table><thead><tr><th>Numero</th><th>Pais</th><th>Riesgo</th><th>Nivel</th><th>Reportes</th><th>Tipo</th></tr></thead><tbody>" + filas + "</tbody></table>"
-    + "<p class=count>Datos de /api/top y /api/stats (JE/JP), cargados por el gateway. Sin scripts en el navegador — compatible con el blindaje (CSP).</p></div></body></html>";
+    + "<div class=scroll><table><thead><tr><th>Numero</th><th>Pais</th><th>Riesgo</th><th>Nivel</th><th>Reportes</th><th>Tipo</th></tr></thead><tbody>" + filas + "</tbody></table></div>"
+    + "<p class=count>Datos de /api/top y /api/stats (JE/JP), cargados por el gateway. Sin scripts en el navegador — compatible con el blindaje (CSP).</p>");
+}
+
+// Pestaña Arquitectura (JE): estado de cada pieza, con una línea de "qué es" para quien no es técnico.
+async function paginaArquitectura(username, env) {
+  const [est, cl] = await Promise.all([estado(env), pedirNodo(env, "/api/cluster")]);
+  const h = Object.fromEntries(est.nodos.map((n) => [n.nombre, n]));
+  const filaNodo = (cl.data && cl.data.nodos || []).reduce((a, n) => (a[n.nombre] = n, a), {});
+  const edadLatido = (nom) => filaNodo[nom] && filaNodo[nom].ultimo_latido ? (Date.now() - Date.parse(filaNodo[nom].ultimo_latido)) / 1000 : null;
+  const algun = (k) => est.nodos.some((n) => n.health && n.health[k] === true) ? true : est.nodos.some((n) => n.health) ? false : null;
+  const pend = est.nodos.reduce((s, n) => s + ((n.health && n.health.pendientes) || 0), 0);
+  const descNodo = (n) => n && n.online ? `v${escHtml(n.health.version)} · ${n.latencia_ms} ms · encendido hace ${hace(n.health.uptime_seg)} · CPU ${Math.round(n.health.cpu || 0)} %` : escHtml(n ? n.error || "sin respuesta" : "no configurado");
+  const latJE = edadLatido("JE");
+  const piezas = [
+    ["Cloudflare Worker (gateway)", "Borde de Cloudflare", true, "Sirviendo esta página", "La puerta de entrada: reparte el tráfico, frena abusos por IP, publica la web y este panel."],
+    ["JE · nodo principal", "Google Cloud Run (us-east1)", h.JE ? h.JE.online : null, descNodo(h.JE), "Atiende a los usuarios. Se apaga solo si no hay tráfico (costo casi cero)."],
+    ["JP · nodo de respaldo", "VM de JP (Tailscale Funnel)", h.JP ? h.JP.online : null, descNodo(h.JP), "Si JE cae, el gateway manda todo aquí en menos de un segundo."],
+    ["Base de datos", "Cloud SQL · Postgres 17", algun("db"), "Vista desde los nodos que respondieron", "Guarda números, reportes y eventos. Solo entra quien tenga identidad de Google (IAM)."],
+    ["Latido programado", "Cloud Scheduler (OIDC)", latJE == null ? null : latJE < 180, latJE == null ? "Sin latidos de JE" : "Último latido de JE hace " + hace(latJE), "Cada minuto despierta a JE, sincroniza pendientes y revisa la IA."],
+    ["IA local", "Lenovo · Ollama (modelo centinela) por Tailscale", algun("ollama"), algun("ollama") ? "Respondiendo" : "Chat responde por reglas", "Clasifica reportes y conversa. Si se apaga, nada se cae: el chat sigue por reglas."],
+    ["Modo degradado", "SQLite en cada nodo", pend === 0 ? true : pend > 0 ? false : null, pend + " reporte(s) en cola para sincronizar", "Si la base falla, los reportes se guardan en el nodo y se suben al volver."],
+  ];
+  const filas = piezas.map(([nom, donde, ok, det, que]) => `<tr><td><b>${nom}</b><div class=que>${que}</div></td><td>${donde}</td><td>${nom === "Modo degradado" ? chip(ok, "Sin cola", "Con cola") : chip(ok)}</td><td>${det}</td></tr>`).join("");
+  const breaker = [];
+  for (const n of nodos(env)) breaker.push(`${n.nombre}: ${(await estaCaido(n)) ? "<span class='chip mal'>marcado caído (30 s)</span>" : "<span class='chip ok'>disponible</span>"}`);
+  return marco(username, "/admin/arquitectura",
+    `<p class=stats>Activo ahora: <b>${escHtml(est.activo || "ninguno")}</b> · consultado ${horaCO(est.hora, false)} (hora Colombia) · Cortacircuito del gateway: ${breaker.join(" · ")}</p>`
+    + `<div class=scroll><table><thead><tr><th>Pieza</th><th>Dónde corre</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>${filas}</tbody></table></div>`
+    + `<p class=count>Decisiones (ADR), diagrama y costos: <a href="${REPO_DOCS}JE_ARQUITECTURA.md">docs/roles/JE_ARQUITECTURA.md</a>. Recarga la página para actualizar.</p>`);
+}
+
+// Último análisis del CI (gitleaks + trivy + tests) en main. Repo público: la API de GitHub no pide token.
+// Se guarda 10 min en la Cache API para no gastar el límite de GitHub.
+async function ultimoEscaneo(env) {
+  const repo = env.REPO_GITHUB || "juan-student1/surprised-system";
+  const clave = new Request("https://ci.centinela.internal/" + repo);
+  try {
+    const c = await caches.default.match(clave);
+    if (c) return await c.json();
+  } catch (e) {}
+  try {
+    const r = await conTimeout(`https://api.github.com/repos/${repo}/actions/workflows/ci.yml/runs?branch=main&per_page=1`,
+      { headers: { "User-Agent": "centinela-gateway", Accept: "application/vnd.github+json" } }, 5000);
+    if (!r.ok) return null;
+    const run = ((await r.json()).workflow_runs || [])[0];
+    const dato = run ? { estado: run.status, resultado: run.conclusion, fecha: run.updated_at, url: run.html_url, commit: (run.head_sha || "").slice(0, 7) } : null;
+    try { await caches.default.put(clave, new Response(JSON.stringify(dato), { headers: { "Cache-Control": "max-age=600" } })); } catch (e) {}
+    return dato;
+  } catch (e) { return null; }
+}
+
+// Pestaña Seguridad (JP): peticiones bloqueadas por hora, rutas más atacadas, eventos, login y último escaneo.
+async function paginaSeguridad(username, env) {
+  const [sec, ci, fallosGlobal] = await Promise.all([pedirNodo(env, "/api/interno/seguridad?horas=24", true), ultimoEscaneo(env), leerFallos("global")]);
+  const d = sec.data;
+  let cuerpo = "";
+  if (!d) {
+    cuerpo += "<p class=nota>Sin datos de los nodos (revisa que CONTROL_TOKEN esté en el gateway y en JE, y que la migración db/004 esté aplicada).</p>";
+  } else {
+    const t = d.por_hora.reduce((a, f) => ({ a: a.a + (+f.c401 || 0), b: a.b + (+f.c403 || 0), c: a.c + (+f.c429 || 0) }), { a: 0, b: 0, c: 0 });
+    const max = Math.max(1, ...d.por_hora.map((f) => (+f.c401 || 0) + (+f.c403 || 0) + (+f.c429 || 0)));
+    cuerpo += `<div class=kpis><div class=kpi><b>${t.a}</b><span>401 · sin credencial válida (24 h)</span></div><div class=kpi><b>${t.b}</b><span>403 · intentaron saltarse el gateway</span></div><div class=kpi><b>${t.c}</b><span>429 · frenados por exceso de peticiones</span></div><div class=kpi><b>${fallosGlobal.length}</b><span>fallos de login al panel (15 min)</span></div></div>`;
+    const filas = d.por_hora.map((f) => { const tot = (+f.c401 || 0) + (+f.c403 || 0) + (+f.c429 || 0); return `<tr><td>${horaCO(f.hora)}</td><td>${+f.c401 || 0}</td><td>${+f.c403 || 0}</td><td>${+f.c429 || 0}</td><td style="width:35%"><div class=barra style="width:${Math.round(100 * tot / max)}%"></div></td></tr>`; }).join("") || "<tr><td colspan=5>Ningún bloqueo en 24 h</td></tr>";
+    cuerpo += `<h2>Bloqueos por hora (hora Colombia, vistos por ${escHtml(sec.nodo)})</h2><div class=scroll><table><thead><tr><th>Hora</th><th>401</th><th>403</th><th>429</th><th>Volumen</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    const rutas = d.por_ruta.map((f) => `<tr><td><code>${escHtml(f.ruta)}</code></td><td>${escHtml(f.codigo)}</td><td>${escHtml(f.total)}</td></tr>`).join("") || "<tr><td colspan=3>—</td></tr>";
+    cuerpo += `<h2>Rutas más bloqueadas</h2><div class=scroll><table><thead><tr><th>Ruta</th><th>Código</th><th>Total</th></tr></thead><tbody>${rutas}</tbody></table></div>`;
+    const ev = d.eventos.map((e) => `<tr><td>${horaCO(e.creado)}</td><td>${escHtml(e.nodo)}</td><td>${escHtml(e.tipo)}</td><td>${escHtml(e.detalle)}</td></tr>`).join("") || "<tr><td colspan=4>—</td></tr>";
+    cuerpo += `<h2>Eventos de seguridad</h2><div class=scroll><table><thead><tr><th>Cuándo</th><th>Nodo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>${ev}</tbody></table></div>`;
+  }
+  const esc = ci ? `${chip(ci.resultado === "success" ? true : ci.resultado ? false : null, "Sin hallazgos", "Falló", "En curso")} commit <code>${escHtml(ci.commit)}</code> · ${horaCO(ci.fecha)} · <a href="${escHtml(ci.url)}">ver en GitHub</a>` : chip(null);
+  cuerpo += `<h2>Último escaneo (CI en main: gitleaks, trivy, ruff, pytest, shellcheck)</h2><p class=stats>${esc}</p>`;
+  cuerpo += `<p class=count>Los 429 del propio gateway (límites por IP en el borde) se ven en Cloudflare → Security → Analytics. Modelo de amenazas y checklist: <a href="${REPO_DOCS}JP_SEGURIDAD.md">docs/roles/JP_SEGURIDAD.md</a>.</p>`;
+  return marco(username, "/admin/seguridad", cuerpo);
+}
+
+// Pestaña Ventas (JM): leads del formulario "Para empresas". Datos personales: solo aquí, nunca en público.
+const SEG_TXT = { persona: "Persona", call_center: "Call center / BPO", cooperativa: "Cooperativa", banco: "Banco / fintech", operador: "Operador", otro: "Otra" };
+async function paginaVentas(username, env) {
+  const { data, nodo } = await pedirNodo(env, "/api/interno/leads?limite=100", true);
+  if (!data) return marco(username, "/admin/ventas", "<p class=nota>Sin datos de los nodos (CONTROL_TOKEN en gateway y JE, migración db/004 aplicada).</p>");
+  const porSeg = {};
+  for (const l of data) porSeg[l.segmento] = (porSeg[l.segmento] || 0) + 1;
+  const kpis = `<div class=kpi><b>${data.length}</b><span>leads (últimos 100)</span></div>` + Object.entries(porSeg).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<div class=kpi><b>${n}</b><span>${escHtml(SEG_TXT[s] || s)}</span></div>`).join("");
+  const filas = data.map((l) => `<tr><td>${horaCO(l.creado)}</td><td>${escHtml(l.nombre)}<div class=que>${escHtml(l.empresa || "")}</div></td><td>${escHtml(SEG_TXT[l.segmento] || l.segmento)}</td><td>${escHtml(l.plan)}</td><td><a href="mailto:${escHtml(encodeURIComponent(l.correo).replace(/%40/g, "@"))}">${escHtml(l.correo)}</a><div class=que>${escHtml(l.telefono || "")}</div></td><td>${escHtml((l.mensaje || "").slice(0, 200))}</td><td>${escHtml(l.estado)}</td></tr>`).join("") || "<tr><td colspan=7>Todavía no hay leads</td></tr>";
+  return marco(username, "/admin/ventas",
+    `<div class=kpis>${kpis}</div><div class=scroll><table><thead><tr><th>Fecha</th><th>Contacto</th><th>Segmento</th><th>Plan</th><th>Correo / tel.</th><th>Mensaje</th><th>Estado</th></tr></thead><tbody>${filas}</tbody></table></div>`
+    + `<p class=count>Datos vía ${escHtml(nodo)}. Datos personales bajo la Ley 1581 de 2012: no se copian fuera del panel y se borran si la persona lo pide. Plan comercial: <a href="${REPO_DOCS}JM_VENTAS.md">docs/roles/JM_VENTAS.md</a>.</p>`);
 }
 
 // Respuesta HTML del panel: nunca en caché, no indexable, y sin poder incrustarse.
@@ -350,8 +478,11 @@ async function handleAdmin(req, env, url) {
     if (n) { if (accion === "pausar") await marcarCaido(n); else await marcarVivo(n); }
     return irA("/admin");
   }
-  // GET /admin
+  // GET /admin y sus pestañas
   if (!valid) return irA("/admin/login", cookies[COOKIE] ? { "Set-Cookie": borrar } : {});
+  if (url.pathname === "/admin/arquitectura") return htmlAdmin(await paginaArquitectura(user, env));
+  if (url.pathname === "/admin/seguridad") return htmlAdmin(await paginaSeguridad(user, env));
+  if (url.pathname === "/admin/ventas") return htmlAdmin(await paginaVentas(user, env));
   const d = await datosPanel(env);
   return htmlAdmin(panelHtml(user, d));
 }
@@ -366,12 +497,13 @@ export default {
     // y /api/control solo lo usa el propio gateway (con CONTROL_TOKEN), nunca desde afuera.
     if (url.pathname === "/login") return cors(irA("/admin/login"));
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
-      const conocida = ["/admin", "/admin/login", "/admin/salir", "/admin/control"].includes(url.pathname);
+      const conocida = ["/admin", "/admin/login", "/admin/salir", "/admin/control", ...PESTANAS.map((p) => p[0])].includes(url.pathname);
       if (!conocida || !env.ADMIN_USER || !env.ADMIN_HASH) return cors(json({ error: "No encontrado" }, 404));
       if (limitado("admin:" + ip, 30)) return cors(json({ error: "Demasiadas peticiones. Espera un minuto." }, 429, { "Retry-After": "60" }));
       return cors(await handleAdmin(req, env, url));
     }
-    if (url.pathname === "/api/control") return cors(json({ error: "No encontrado" }, 404));
+    // Rutas que solo usa el propio gateway (con CONTROL_TOKEN): desde afuera no existen.
+    if (url.pathname === "/api/control" || url.pathname.startsWith("/api/interno")) return cors(json({ error: "No encontrado" }, 404));
     const esApi = url.pathname.startsWith("/api/") || url.pathname === "/health";
 
     if (esApi) {
