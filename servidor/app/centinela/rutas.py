@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, TAREAS_SA, TAREAS_AUDIENCIA, log
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
 from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha, hash_reportero
-from .ia import ollama_disponible, ollama_chat
+from .ia import ollama_disponible, ia_disponible, ia_generar, vertex_cupo, SinIA, VERTEX_ACTIVO
+from .analisis import analisis_profundo, TIPOS as TIPOS_ANALISIS
 from .servicios import registrar_reporte, telegram_enviar, tareas_programadas, _exceso
 from . import auth as authmod
 
@@ -119,7 +120,7 @@ def chat_logic(c: Chat):
         return {"respuesta": FUERA_DE_TEMA, "fuente": "reglas", "nodo": NODO, "numeros": []}
     try: st = q("""select (select count(*) from numeros) numeros, (select count(*) from reportes where creado > now() - interval '24 hours') reportes_24h""", uno=True)
     except Exception: st = None
-    if ollama_disponible():
+    if ia_disponible():
         try:
             import json as _json
             contexto = _json.dumps({"numeros_consultados": fichas, "estadisticas": st}, default=str, ensure_ascii=False)
@@ -129,11 +130,13 @@ def chat_logic(c: Chat):
                       "para hablar de números; nunca inventes reportes ni cifras. Si el riesgo es alto, "
                       "aconseja no contestar y bloquear. La pregunta del usuario SÍ es de tu tema: respóndela "
                       "directamente, sin decir que no puedes ayudar. Nunca pidas datos personales.")
-            txt = ollama_chat(system, f"CONTEXTO: {contexto}\n\nUSUARIO: {c.mensaje}", temperatura=0.3, num_predict=160)
+            txt, fuente = ia_generar(system, f"CONTEXTO: {contexto}\n\nUSUARIO: {c.mensaje}", tipo="chat", temperatura=0.3, num_predict=160)
             if txt.startswith(FUERA_DE_TEMA) and len(txt) > len(FUERA_DE_TEMA) + 5:
                 txt = txt[len(FUERA_DE_TEMA):].strip()   # el modelo pequeño a veces antepone la negativa
-            return {"respuesta": txt, "fuente": "ollama", "modelo": os.getenv("OLLAMA_MODEL", "qwen2.5:7b"), "nodo": NODO, "numeros": fichas}
-        except Exception as e: log.warning("Ollama falló, respondo con reglas: %s", e)
+            modelo = os.getenv("OLLAMA_MODEL", "qwen2.5:7b") if fuente == "ollama" else vertex_cupo()["modelo"]
+            return {"respuesta": txt, "fuente": fuente, "modelo": modelo, "nodo": NODO, "numeros": fichas}
+        except SinIA: pass
+        except Exception as e: log.warning("IA falló, respondo con reglas: %s", e)
     return {"respuesta": respuesta_reglas(fichas, st), "fuente": "reglas", "nodo": NODO, "numeros": fichas}
 
 _google = {"req": None}
@@ -171,7 +174,7 @@ def registrar(app: FastAPI):
     @app.get("/health")
     def health():
         with local() as c: pend = c.execute("select count(*) n from pendientes").fetchone()["n"]
-        return {"ok": True, "nodo": NODO, "rol": ROL, "version": VERSION, "db": db_ok(), "ollama": ollama_disponible(), "pendientes": pend, "uptime_seg": int((datetime.now(timezone.utc) - INICIO).total_seconds()), **metricas()}
+        return {"ok": True, "nodo": NODO, "rol": ROL, "version": VERSION, "db": db_ok(), "ollama": ollama_disponible(), "vertex": VERTEX_ACTIVO, "pendientes": pend, "uptime_seg": int((datetime.now(timezone.utc) - INICIO).total_seconds()), **metricas()}
 
     @app.post("/tareas/latido")
     def tareas(request: Request):
@@ -310,6 +313,25 @@ def registrar(app: FastAPI):
         eventos = q("""select nodo, tipo, detalle, creado from eventos where tipo in ('login_fallido','mantenimiento','reactivado','campana')
                        order by creado desc limit 15""", todos=True)
         return {"horas": horas, "por_hora": por_hora, "por_ruta": por_ruta, "eventos": eventos}
+
+    @app.get("/api/interno/ia")
+    def ia_interna(request: Request, horas: int = 24):
+        _solo_gateway_con_token(request)
+        horas = max(1, min(horas, 168))
+        try:
+            uso = q("""select proveedor, tipo, resultado, sum(llamadas) llamadas, sum(tokens_entrada) tokens_entrada,
+                              sum(tokens_salida) tokens_salida from ia_uso_hora where hora > now() - make_interval(hours => %s)
+                       group by 1, 2, 3 order by 4 desc""", (horas,), todos=True)
+        except Exception as e:
+            log.warning("Uso de IA sin BD: %s", e); uso = []
+        return {"horas": horas, "ollama": ollama_disponible(), "vertex": vertex_cupo(), "uso": uso}
+
+    @app.post("/api/interno/analisis")
+    def analisis_interno(request: Request, tipo: str = ""):
+        _solo_gateway_con_token(request)
+        if tipo not in TIPOS_ANALISIS: raise HTTPException(422, "Tipo de análisis inválido")
+        try: return analisis_profundo(tipo)
+        except SinIA: raise HTTPException(503, "No hay IA disponible o se agotó el cupo diario de análisis")
 
     @app.post("/api/bot")
     def bot(m: MensajeBot, request: Request, bg: BackgroundTasks):
