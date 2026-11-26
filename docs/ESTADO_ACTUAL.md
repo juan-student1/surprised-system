@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `docs/estado-fase3`
+> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `feat/analitica` (Fase 4)
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -19,6 +19,7 @@
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
+| **Fase 4 · Analítica** (código listo, **sin crear nada en la nube**): exportación diaria agregada y anonimizada a BigQuery (`/tareas/exportar`, OIDC, *load jobs* `WRITE_TRUNCATE`), 8 tablas, 10 vistas (`analitica/vistas.sql`), `nube/12_bigquery.sh`, guía `docs/17_LOOKER_STUDIO.md` con las 7 páginas y sus textos; API v1.8.0; 122 tests; SQL probado contra Postgres local. Costo revisado: 0 (nivel gratis; Scheduler queda en 2 de 3 trabajos gratis) | `feat/analitica` | JE |
 | **Fase 3 · IA híbrida** (PR #4, merge; **desplegada con Vertex apagado**: migración `db/005` ✅, JE v1.7.0 revisión `centinela-je-00009` ✅, gateway con pestaña IA ✅; chat verificado por Ollama). **Falta encender Vertex** (pasos 0, 2, 3 y 4 de abajo, los corre Juan): Ollama → Vertex AI Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas; topes 20/h, 100/día, 10 análisis profundos/día; caché 1 h; timeout 20 s; análisis profundo a demanda (campañas 72 h, resumen semanal) desde la pestaña **IA** del panel; API v1.7.0; migración `db/005`; `nube/11_vertex.sh`; doc 16; 104 tests | `feat/vertex-ia` | JE |
 | Revisar el panel con login (Arquitectura, Seguridad, Ventas) y borrar el lead de prueba #1 (`delete from leads where id = 1;`) | — | JE |
 | Rol de solo lectura de JP: `PROYECTO=ID_DEL_PROYECTO CORREO_JP=… bash nube/09_lectura_jp.sh` | — | JE (correo de JP por privado) |
@@ -32,6 +33,13 @@
 4. `bash nube/05_desplegar.sh` — redespliega JE: al ver la API habilitada enciende Vertex (`/health` → `"vertex":true`).
 5. ~~`cd gateway && npx wrangler deploy`~~ ✅ desplegado.
 6. Comprobar: apagar Ollama → chat con `"fuente":"vertex"` → contador en la pestaña IA.
+
+### Para activar la Fase 4 (en orden, cada paso con "ok" de Juan)
+1. `bash nube/12_bigquery.sh preparar` — dataset `centinela_analitica` (us-east1) + `bigquery.dataEditor` solo en el dataset y `bigquery.jobUser` para `centinela-run`.
+2. `bash nube/05_desplegar.sh` — JE v1.8.0 con la exportación encendida (y Vertex si ya se activó).
+3. `bash nube/12_bigquery.sh programar` — trabajo `centinela-exportar` (01:15 diario) + primera exportación.
+4. `bash nube/12_bigquery.sh vistas` — 10 vistas.
+5. Looker Studio: seguir `docs/17_LOOKER_STUDIO.md` §5 (lo hace Juan con su cuenta; 30‑45 min).
 
 ## Pendiente ⏳
 | # | Qué | Origen | Responsable | Bloquea |
