@@ -26,6 +26,14 @@ if gcloud services list --enabled --filter="config.name=aiplatform.googleapis.co
 else
   echo "Vertex AI: apagado (la API no está habilitada; ver nube/11_vertex.sh)"
 fi
+# Analítica: exportación a BigQuery solo si ya existe el dataset (nube/12_bigquery.sh preparar)
+if [[ "$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+        "https://bigquery.googleapis.com/bigquery/v2/projects/$PROYECTO/datasets/${BQ_DATASET:-centinela_analitica}")" == 200 ]]; then
+  VARS+="|BQ_PROYECTO=$PROYECTO|BQ_DATASET=${BQ_DATASET:-centinela_analitica}|BQ_UBICACION=${BQ_UBICACION:-us-east1}"
+  echo "BigQuery: exportación encendida (${BQ_DATASET:-centinela_analitica})"
+else
+  echo "BigQuery: exportación apagada (no existe el dataset; ver nube/12_bigquery.sh)"
+fi
 
 azul "Desplegando $SERVICIO en $REGION (la primera vez tarda ~4 min)"
 # max-instances=1: el modo mantenimiento (demo de failover) vive en memoria de UNA instancia.
