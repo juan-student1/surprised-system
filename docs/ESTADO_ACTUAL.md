@@ -59,7 +59,18 @@
 | 13 | Fase 5 · Pulir y vender | plan | todos | Fase 4 |
 | 14 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP (`nube/09_lectura_jp.sh quitar`); cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
 
+## ▶️ Próxima sesión (empezar aquí)
+1. `git checkout main && git pull` y revisar el **PR #6** (Fase 4, CI en verde, sin merge todavía).
+2. Si se da el "ok": merge del PR #6 y activar en este orden (Juan corre los `!`):
+   - Vertex (Fase 3, opcional; antes revisar el precio de Gemini 3.8 Flash en la consola): `nube/11_vertex.sh dar` → `probar`.
+   - BigQuery (Fase 4): `nube/12_bigquery.sh preparar` → `nube/05_desplegar.sh` (enciende Vertex y la exportación a la vez) → `12_bigquery.sh programar` → `12_bigquery.sh vistas`.
+   - Armar el panel en Looker Studio (`docs/17_LOOKER_STUDIO.md` §5).
+3. Pendientes de Juan: borrar el lead de prueba #1, revisar las pestañas del panel con su usuario, correo de JP para `09_lectura_jp.sh`.
+4. Luego: **Fase 5 · Pulir y vender** (auditoría gitleaks/semgrep/trivy, web móvil/PWA, README como producto, `13_PITCH.md` y guion de sustentación JE/JP/JM).
+
 ## Notas de la última sesión
+- Sesión 2026‑11‑25 (PC de mesa): Fases 0‑3 cerradas y desplegadas (Vertex aún apagado); Fase 4 en PR #6.
+- Producción hoy: JE v1.7.0 (`centinela-je-00009`), gateway con pestañas Resumen/Arquitectura/Seguridad/Ventas/IA, migraciones 004 y 005 aplicadas.
 - **Proyecto de Google Cloud:** el de nombre `centinela` (`gcloud projects list`; el ID no se sube al repo). Fuera de Cloud Shell los scripts se corren con `PROYECTO=ID_DEL_PROYECTO bash nube/…`; `config.sh` exporta `CLOUDSDK_CORE_PROJECT` para que ningún `gcloud` caiga en el proyecto por defecto del equipo (en el PC de mesa es otro proyecto).
 - Migraciones nuevas: `PROYECTO=ID_DEL_PROYECTO bash nube/10_migracion.sh db/NNN_….sql` (Auth Proxy + psql, clave desde Secret Manager sin imprimirla).
 - Permisos de Claude Code para desplegar: `.claude/settings.local.json` (local, no se sube), solo para estos scripts y `npx wrangler deploy`.
