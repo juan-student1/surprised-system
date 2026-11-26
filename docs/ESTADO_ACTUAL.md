@@ -13,6 +13,7 @@
 | Auditoría bloque 2 en JE y gateway: `GATEWAY_SECRET` + `BOT_SECRET` (H1, M1) | 2026‑11‑17 | JE |
 | Auditoría de la migración (C1‑C5): Tailscale 1.104.7, puerta única, llave TS fuera del proceso, OIDC con caché, requests 2.33.0 | 2026‑11‑20 | JE |
 | Fase 0: diagnóstico del repo | 2026‑11‑25 | JE |
+| **Fases 3 y 4 activadas en la nube** (2026‑11‑26): Vertex AI habilitado + `roles/aiplatform.user` para `centinela-run`, prueba de `gemini-3.8-flash` en `global` ✅; dataset `centinela_analitica` + IAM mínima; **JE v1.8.0** (revisión `centinela-je-00010`) con `vertex:true` y exportación encendida; trabajo `centinela-exportar` (01:15 diario) y primera exportación `200 OK` (8 tablas con datos); 10 vistas creadas y consultadas | 2026‑11‑26 | JE |
 | **Fase 5 · Pulir y vender** (PR #7, merge y gateway desplegado 2026‑11‑26): auditoría final (0 secretos, 0 vulnerabilidades altas), web móvil corregida (menú visible a 360‑390 px), README como producto, pitch y guion por rol, doc 12 al día | 2026‑11‑26 | JE |
 | **Fase 4 · Analítica** (PR #6, merge 2026‑11‑26): exportación a BigQuery, 8 tablas, 10 vistas, guía de Looker; pendiente de activar en la nube | 2026‑11‑26 | JE |
 | **Fase 1 · Cimientos** (PR #1, merge): `CLAUDE.md`, este tablero, 72 tests, CI (ruff, pytest, shellcheck, gitleaks, trivy) | 2026‑11‑25 | JE |
@@ -53,13 +54,13 @@
 
 ## ▶️ Próxima sesión (empezar aquí)
 **Las 5 fases del plan están en `main`.** Lo que falta es operativo:
-1. **Activar en la nube** (Juan corre los `!`, en orden): Vertex `11_vertex.sh dar` → `probar` (opcional, tras revisar el precio de Gemini 3.8 Flash); BigQuery `12_bigquery.sh preparar` → `05_desplegar.sh` (JE v1.8.0) → `12_bigquery.sh programar` → `vistas`; panel de Looker (`17_LOOKER_STUDIO.md` §5).
+1. **Looker Studio:** armar el panel con `docs/17_LOOKER_STUDIO.md` §5 (Juan, con su cuenta; 30‑45 min). Opcional: cuando se conozca el precio de Gemini 3.8 Flash, poner `VERTEX_PRECIO_ENTRADA_M` y `VERTEX_PRECIO_SALIDA_M` en JE para que `uso_ia` estime el costo.
 2. **JP:** bloque 2 + Cloud SQL + actualizar su nodo → prueba de failover real (`12_PRUEBA_CON_JP.md`).
 3. **Ensayo de la sustentación** con `13_PITCH.md` (JE · JP · JM); JM confirma la fuente de cada cifra.
 4. Pendientes chicos: borrar el lead de prueba #1, correo de JP para `09_lectura_jp.sh`, C6 (ACL de Tailscale), B3, B5.
 
 ## Notas de la última sesión
-- Sesión 2026‑11‑26 (PC de mesa): merge de las Fases 4 y 5; gateway desplegado con la web corregida para celular. En producción: JE v1.7.0, Vertex y BigQuery aún sin activar.
+- Sesión 2026‑11‑26 (PC de mesa): merge de las Fases 4 y 5; gateway con la web corregida para celular; Vertex y BigQuery activados. En producción: JE v1.8.0 con IA híbrida y exportación diaria a BigQuery.
 - Sesión 2026‑11‑25 (PC de mesa): Fases 0‑3 cerradas y desplegadas (Vertex aún apagado); Fase 4 en PR #6.
 - Producción hoy: JE v1.7.0 (`centinela-je-00009`), gateway con pestañas Resumen/Arquitectura/Seguridad/Ventas/IA, migraciones 004 y 005 aplicadas.
 - **Proyecto de Google Cloud:** el de nombre `centinela` (`gcloud projects list`; el ID no se sube al repo). Fuera de Cloud Shell los scripts se corren con `PROYECTO=ID_DEL_PROYECTO bash nube/…`; `config.sh` exporta `CLOUDSDK_CORE_PROJECT` para que ningún `gcloud` caiga en el proyecto por defecto del equipo (en el PC de mesa es otro proyecto).
