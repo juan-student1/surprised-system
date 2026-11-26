@@ -1,57 +1,102 @@
-# CENTINELA 🛡️
+# CENTINELA 🛡️ · Antes de contestar, sabe quién te llama
 
-Sistema distribuido y tolerante a fallos que identifica llamadas spam y estafas telefónicas con reportes de la comunidad, puntaje de riesgo e IA local.
+**Centinela identifica llamadas de estafa y spam en Colombia con lo que ya sabe la comunidad:** cada reporte protege a la siguiente persona, y te avisa **antes de contestar**.
 
-**Grupo:** JE (Juan, arquitectura) · JP (seguridad) · JM (ventas) — Ingeniería de Sistemas, semestre 8.
+**👉 Pruébalo en vivo:** https://centinela.juan-gallego-sec.workers.dev
+
+[![CI](https://github.com/juan-student1/surprised-system/actions/workflows/ci.yml/badge.svg)](https://github.com/juan-student1/surprised-system/actions/workflows/ci.yml)
+
+---
+
+## El problema
+En Colombia contestar un número desconocido es una apuesta: el **falso banco** que pide el código del SMS, el **wangiri** (llamada perdida internacional para que la devuelvas y te cobren tarifa premium), la extorsión, la cobranza y el telemarketing que nadie pidió. Solo las denuncias de fraude telefónico ante la Policía subieron 18 % en 2024 (13.600 casos, y la mayoría nunca se denuncia), y **cada víctima lo vive sola**: lo que aprende una persona no le sirve a la siguiente.
+
+## La solución
+| Canal | Qué haces |
+|---|---|
+| 🌐 **Web** (instalable en el celular) | Escribes el número y ves su riesgo, sus reportes y el tipo de fraude. Reportas en 10 segundos. Le preguntas al asistente de IA. |
+| 🤖 **Telegram** | Le mandas el número al bot, reportas con `/reportar` y recibes un resumen cada mañana. |
+| 📱 **App Android** | Cuando suena la llamada, el celular te avisa solo con una notificación de riesgo. |
+
+**Riesgo de 0 a 100** calculado por **personas distintas** que reportan (1 → 30, 2 → 50, 3 → 65 alto, 5 → 83), con decaimiento en el tiempo y +25 para prefijos de wangiri. Una sola persona no puede "hundir" un número. Si 3 personas reportan el mismo número en 15 minutos, se dispara una **alerta de campaña**.
+
+## Por qué confiar en Centinela
+- **No se cae.** Dos servidores en redes distintas (Google Cloud Run y la VM de JP) detrás de un gateway en Cloudflare: si uno falla, el otro atiende en **menos de un segundo**. Si la base de datos falla, los reportes se guardan en el nodo y se sincronizan al volver.
+- **Privado por diseño.** No guardamos tu IP ni tu nombre (solo un hash anónimo); los números se muestran **enmascarados** en público; la IA corre **en un equipo propio** y la nube solo entra de respaldo, con datos anonimizados.
+- **Seguro y auditado.** Puerta única por el gateway, base de datos accesible solo con identidad de Google (IAM), panel con contraseña + 2FA, CI con gitleaks, trivy, ruff, tests y shellcheck en cada cambio. Modelo de amenazas STRIDE y checklist OWASP API Top 10 en [`docs/roles/JP_SEGURIDAD.md`](docs/roles/JP_SEGURIDAD.md).
+- **Barato de operar.** ≈ **11 USD/mes** en total (casi todo es la base de datos).
+
+## Para empresas
+Cooperativas, bancos pequeños, call centers y operadores: **alertas cuando suplantan tu marca, consulta por API y panel de campañas.** Planes **Gratis**, **Pro** ($14.900 COP/mes) y **Empresa** (desde $790.000 COP/mes, piloto). Escríbenos desde la sección [Para empresas](https://centinela.juan-gallego-sec.workers.dev/#empresas). Detalle comercial: [`docs/roles/JM_VENTAS.md`](docs/roles/JM_VENTAS.md).
+
+---
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    U["👥 Web · Telegram · Android"] --> GW["☁️ Cloudflare Worker<br/>failover · límites · panel"]
+    GW -->|"1º"| JE["🟢 JE · Cloud Run"]
+    GW -.->|"si JE falla"| JP["🟠 JP · VM de respaldo"]
+    JE --> SQL[("🗄️ Cloud SQL<br/>Postgres 17 · IAM")]
+    JP --> SQL
+    JE -.->|"Tailscale"| IA["🧠 Ollama (local)"]
+    JE -.->|"respaldo con topes"| GEM["✨ Vertex AI Gemini"]
+    SCH["⏰ Cloud Scheduler<br/>OIDC"] --> JE
+    JE -->|"agregados anónimos · diario"| BQ[("📊 BigQuery")] --> LS["Looker Studio"]
+```
+
+| Si se cae… | Qué pasa | El usuario nota |
+|---|---|---|
+| **JE** | El gateway lo marca caído 30 s y todo va a JP; vuelve solo | Nada |
+| **La base de datos** | Reportes a SQLite local, consultas desde caché, sincroniza al volver | Respuestas desde caché |
+| **La IA local** | Responde Gemini (con topes) o reglas | Nada / respuestas más simples |
+| **Un ataque de tráfico** | Cloudflare lo absorbe; límites por IP en el borde y en el nodo | Nada |
+
+Decisiones (ADR), costos y diagrama completo: [`docs/roles/JE_ARQUITECTURA.md`](docs/roles/JE_ARQUITECTURA.md).
+
+## Para desarrolladores
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r servidor/app/requirements.txt -r requirements-dev.txt
+pytest && ruff check .                                   # 122 tests, sin red ni BD real
+uvicorn --app-dir servidor/app main:app --reload         # API local (sin DATABASE_URL: modo degradado)
+cd gateway && npx wrangler dev                           # gateway + web en local
+```
 
 ```
-Usuarios → Cloudflare Worker (failover) → JE principal (Cloud Run) ─────┐
-                                        ↘ JP respaldo (VM de JP) ──────┴→ Cloud SQL Postgres (Google Cloud)
-           Cloud Scheduler (latido OIDC) ┘   IAM: una cuenta de servicio por función
-                         Tailscale ↔ Lenovo de Juan: Ollama + n8n + Telegram
+servidor/app/        API FastAPI (igual en JE y JP) + Dockerfile de Cloud Run
+gateway/             Cloudflare Worker: failover, límites, panel /admin (Resumen, Arquitectura, Seguridad, Ventas, IA)
+web/                 Web pública + PWA
+nube/                Scripts de Google Cloud en orden (IAM, Cloud SQL, secretos, despliegue, Vertex, BigQuery)
+db/                  Esquema y migraciones (001‑005)
+analitica/           Vistas de BigQuery para Looker Studio
+ia/                  Ollama y flujos de n8n (bot de Telegram y avisos)
+android/             App "Centinela llamadas"
+tests/               pytest · CI en .github/workflows/ci.yml
+docs/                Guías numeradas, roles y tablero
 ```
 
-## Empieza aquí
-1. [`docs/00_PLAN_MAESTRO.md`](docs/00_PLAN_MAESTRO.md) — arquitectura, decisiones, fases
-2. **[`docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md`](docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md) — JE en Cloud Run, BD en Cloud SQL, IAM (arquitectura actual)**
-3. [`docs/04_NUBE.md`](docs/04_NUBE.md) — GitHub, Cloudflare (y Supabase, ya reemplazado)
-4. [`docs/01_JE_SERVIDOR_PRINCIPAL.md`](docs/01_JE_SERVIDOR_PRINCIPAL.md) — histórico: JE en VM e2‑micro
-4. [`docs/02_JP_SERVIDOR_RESPALDO.md`](docs/02_JP_SERVIDOR_RESPALDO.md)
-5. [`docs/03_PC_PERSONAL_IA.md`](docs/03_PC_PERSONAL_IA.md) → ahora [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md)
-6. [`docs/05_PRUEBAS.md`](docs/05_PRUEBAS.md) — protocolo de pruebas y auditoría
-7. [`docs/06_TELEGRAM_N8N.md`](docs/06_TELEGRAM_N8N.md) — bot de Telegram y automatizaciones n8n
-8. [`docs/07_LLAMADAS_REALES.md`](docs/07_LLAMADAS_REALES.md) — detectar llamadas reales (Android / iPhone)
-9. [`docs/08_CHECKLIST_FINAL.md`](docs/08_CHECKLIST_FINAL.md) — integrar a JP y guion de sustentación
-10. [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) — IA en el Lenovo: Ollama + n8n + bot (paso a paso)
-11. [`docs/12_PRUEBA_CON_JP.md`](docs/12_PRUEBA_CON_JP.md) — lo que falta con JP + prueba de failover
-12. [`docs/14_AUDITORIA_Y_MEJORAS.md`](docs/14_AUDITORIA_Y_MEJORAS.md) — auditoría de seguridad, nota de la web y plan de mejoras
-13. [`docs/16_VERTEX_AI.md`](docs/16_VERTEX_AI.md) — IA híbrida: Ollama local + Vertex AI Gemini de respaldo
-14. [`docs/17_LOOKER_STUDIO.md`](docs/17_LOOKER_STUDIO.md) — analítica: BigQuery + panel en Looker Studio
-15. [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) — **tablero: hecho / en curso / pendiente**
-16. Roles: [`JE · Arquitectura`](docs/roles/JE_ARQUITECTURA.md) · [`JP · Seguridad`](docs/roles/JP_SEGURIDAD.md) · [`JM · Ventas`](docs/roles/JM_VENTAS.md)
+Reglas del repo (público, sin secretos; confirmación antes de tocar la nube; una fase = una rama = un PR): [`CLAUDE.md`](CLAUDE.md).
 
-**En vivo:** https://centinela.juan-gallego-sec.workers.dev
+## Documentación
+| Tema | Documento |
+|---|---|
+| **Estado del proyecto (empezar aquí)** | [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) |
+| Pitch y guion de sustentación | [`docs/13_PITCH.md`](docs/13_PITCH.md) |
+| Arquitectura en la nube (Cloud Run, Cloud SQL, IAM) | [`docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md`](docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md) |
+| IA híbrida (Ollama + Vertex AI Gemini) | [`docs/16_VERTEX_AI.md`](docs/16_VERTEX_AI.md) |
+| Analítica (BigQuery + Looker Studio) | [`docs/17_LOOKER_STUDIO.md`](docs/17_LOOKER_STUDIO.md) |
+| Auditoría de seguridad | [`docs/14_AUDITORIA_Y_MEJORAS.md`](docs/14_AUDITORIA_Y_MEJORAS.md) |
+| Roles | [JE · Arquitectura](docs/roles/JE_ARQUITECTURA.md) · [JP · Seguridad](docs/roles/JP_SEGURIDAD.md) · [JM · Ventas](docs/roles/JM_VENTAS.md) |
+| Plan maestro e historia | [`docs/00_PLAN_MAESTRO.md`](docs/00_PLAN_MAESTRO.md) |
+| Nodo de respaldo y prueba de failover | [`docs/02_JP_SERVIDOR_RESPALDO.md`](docs/02_JP_SERVIDOR_RESPALDO.md) · [`docs/12_PRUEBA_CON_JP.md`](docs/12_PRUEBA_CON_JP.md) |
+| Telegram, n8n e IA en el Lenovo | [`docs/06_TELEGRAM_N8N.md`](docs/06_TELEGRAM_N8N.md) · [`docs/11_LENOVO_IA.md`](docs/11_LENOVO_IA.md) |
+| Llamadas reales (Android / iPhone) | [`docs/07_LLAMADAS_REALES.md`](docs/07_LLAMADAS_REALES.md) |
 
-## Estructura
-```
-db/schema.sql              Esquema PostgreSQL
-servidor/app/              API FastAPI del nodo (igual en JE y JP)
-servidor/app/Dockerfile    Imagen de JE para Cloud Run (API + Tailscale userspace)
-servidor/instalar_nodo.sh  Debian/Mint/Arch → servidor (JP)
-servidor/conectar_cloudsql.sh  JP → Cloud SQL por Auth Proxy (cuenta centinela-jp)
-nube/                      Scripts de Cloud Shell: IAM, Cloud SQL, secretos, migración, Cloud Run, Scheduler
-servidor/actualizar.sh     Actualizar la API desde GitHub
-servidor/configurar_telegram.sh  Token del bot, chat_id y clave del celular
-gateway/                   Cloudflare Worker con failover
-ia/                        Ollama y n8n en el PC personal
-web/                       Web responsive (se publica con el gateway)
-ia/n8n/                    Flujos de n8n para importar (bot + avisos)
-db/002_llamadas.sql        Migración: llamadas reales
-db/003_cloudsql.sql        Migración: ajustes para Cloud SQL (RLS, permisos de centinela_jp)
-db/004_leads_y_seguridad.sql  Migración: leads de empresas y métricas de seguridad por hora
-tests/                     Tests de la API (pytest) · CI en .github/workflows/ci.yml
-analitica/vistas.sql       Vistas de BigQuery para Looker Studio
-docs/                      Guías paso a paso
-```
+## Equipo
+**JE** (Juan) · Arquitectura — **JP** · Seguridad — **JM** · Ventas
+Ingeniería de Sistemas, semestre 8.
 
 *Toda la gloria a Dios.*
