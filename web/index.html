@@ -30,6 +30,7 @@
     <a href="#sala">Sala 3D</a>
     <a href="#cluster">Clúster</a>
     <a href="#protegerte">Protégete</a>
+    <a href="#empresas">Empresas</a>
     <a href="#app">App Android</a>
     <a href="/admin" rel="noopener">Panel admin</a>
     <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
@@ -244,6 +245,60 @@
   </section>
 
 
+  <!-- PARA EMPRESAS (JM · ventas) -->
+  <section class="seccion" id="empresas">
+    <div class="seccion-cab">
+      <h2>Para empresas</h2>
+      <p>Lo que la comunidad sabe de un número, disponible para tu operación: antes de que tus clientes contesten, antes de que tus agentes marquen y antes de que una transferencia salga.</p>
+    </div>
+    <ul class="segmentos">
+      <li><b>Cooperativas y bancos pequeños</b><span>Alerta a tus asociados cuando los llamen haciéndose pasar por ti y mide qué campañas los están atacando.</span></li>
+      <li><b>Call centers y BPO</b><span>Consulta por API la reputación de los números antes de marcar y protege tus líneas salientes de ser marcadas como spam.</span></li>
+      <li><b>Operadores y empresas de servicios</b><span>Detecta campañas de wangiri y suplantación en minutos con reportes de personas reales, no solo con listas viejas.</span></li>
+    </ul>
+    <div class="planes">
+      <article class="plan">
+        <h3>Gratis</h3><p class="precio">$0</p>
+        <ul><li>Consulta en la web y en Telegram</li><li>Reportes ilimitados</li><li>Alertas de campañas activas</li></ul>
+      </article>
+      <article class="plan">
+        <h3>Pro</h3><p class="precio">$14.900 <small>COP/mes</small></p>
+        <ul><li>App Android con aviso al entrar la llamada</li><li>Alertas privadas por Telegram</li><li>Historial de llamadas de tu celular</li></ul>
+      </article>
+      <article class="plan destacado">
+        <h3>Empresa</h3><p class="precio">Desde $790.000 <small>COP/mes</small></p>
+        <ul><li>API con llave propia (consulta y reporte)</li><li>Panel de campañas contra tu marca</li><li>Soporte y acuerdo de servicio</li></ul>
+      </article>
+    </div>
+    <p class="nota-planes">Precios de referencia del piloto 2026. La API con llave por empresa está en piloto: escríbenos y te damos acceso.</p>
+
+    <form id="form-lead" class="reporte" autocomplete="on" novalidate>
+      <h3 class="form-titulo">Hablemos</h3>
+      <div class="campos-2">
+        <div class="campo"><label for="l-nombre">Tu nombre</label><input id="l-nombre" name="nombre" required minlength="2" maxlength="80" autocomplete="name"></div>
+        <div class="campo"><label for="l-empresa">Empresa <span class="opcional">(opcional)</span></label><input id="l-empresa" name="empresa" maxlength="120" autocomplete="organization"></div>
+        <div class="campo"><label for="l-correo">Correo</label><input id="l-correo" name="correo" type="email" required maxlength="160" autocomplete="email"></div>
+        <div class="campo"><label for="l-telefono">Teléfono <span class="opcional">(opcional)</span></label><input id="l-telefono" name="telefono" type="tel" maxlength="25" autocomplete="tel"></div>
+        <div class="campo"><label for="l-segmento">Tipo de organización</label>
+          <select id="l-segmento" name="segmento">
+            <option value="cooperativa">Cooperativa</option><option value="banco">Banco o fintech</option>
+            <option value="call_center">Call center / BPO</option><option value="operador">Operador de telefonía</option>
+            <option value="persona">Persona</option><option value="otro">Otra</option>
+          </select></div>
+        <div class="campo"><label for="l-plan">Plan que te interesa</label>
+          <select id="l-plan" name="plan"><option value="empresa">Empresa</option><option value="pro">Pro</option><option value="gratis">Gratis</option></select></div>
+      </div>
+      <div class="campo"><label for="l-mensaje">¿Qué necesitas? <span class="opcional">(opcional)</span></label><textarea id="l-mensaje" name="mensaje" rows="3" maxlength="800"></textarea></div>
+      <div class="trampa" aria-hidden="true"><label for="l-sitio">No llenar</label><input id="l-sitio" name="sitio_web" tabindex="-1" autocomplete="off"></div>
+      <label class="acepto"><input type="checkbox" id="l-acepta" name="acepta_datos" required>
+        <span>Autorizo a Centinela a usar estos datos solo para contactarme sobre el servicio (Ley 1581 de 2012). Puedo pedir que los borren cuando quiera.</span></label>
+      <div class="reporte-pie">
+        <button type="submit" class="btn-principal">Quiero que me contacten</button>
+        <p class="resultado" id="l-resultado" role="status"></p>
+      </div>
+    </form>
+  </section>
+
   <!-- APP ANDROID (compacta: evita saturar) -->
   <section class="seccion app-sec" id="app">
     <details class="app-det">
@@ -269,7 +324,7 @@
 
 <footer class="pie">
   <p><b>Hecho por JP, JM y JE</b> · Ingeniería de Sistemas · Uniremington</p>
-  <p class="pie-tec">Proyecto de Sistemas Distribuidos · Linux en consola · Tailscale · Cloudflare · Supabase · Ollama · n8n · Telegram · <a href="/admin">Panel admin</a> · <a href="https://github.com/juan-student1/surprised-system">GitHub</a></p>
+  <p class="pie-tec">Proyecto de Sistemas Distribuidos · Cloudflare · Google Cloud (Cloud Run, Cloud SQL) · Tailscale · Ollama · n8n · Telegram · <a href="/admin">Panel admin</a> · <a href="https://github.com/juan-student1/surprised-system">GitHub</a></p>
 </footer>
 
 <!-- CHATBOT -->

@@ -458,3 +458,24 @@ h3 { font-size: 18px; font-weight: 700; }
 .sub { color: var(--gris); font-size: 14px; margin-top: 12px; }
 html[data-tema="oscuro"] { color-scheme: dark; --papel: #0E1424; --superficie: #161E33; --tinta: #E7EBF4; --gris: #9BA5BD; --linea: #283252; --cobalto: #7A93FF; --cobalto-suave: #1E2A52; }
 html[data-tema="claro"] { color-scheme: light; --papel: #EEF1F6; --superficie: #FFFFFF; --tinta: #16203A; --gris: #586178; --linea: #D5DBE7; --cobalto: #2346D8; --cobalto-suave: #E3E9FF; }
+
+/* para empresas (JM · ventas) */
+.segmentos { list-style: none; padding: 0; margin: 0 0 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.segmentos li { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 18px; display: grid; gap: 6px; }
+.segmentos span { color: var(--gris); font-size: 15px; }
+.planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.plan { background: var(--superficie); border: 1px solid var(--linea); border-radius: 20px; padding: 22px; }
+.plan h3 { margin: 0; font-size: 18px; }
+.plan.destacado { border-color: var(--cobalto); box-shadow: 0 0 0 3px var(--cobalto-suave); }
+.precio { font-size: 26px; font-weight: 750; margin: 6px 0 12px; font-variant-numeric: tabular-nums; }
+.precio small { font-size: 14px; font-weight: 500; color: var(--gris); }
+.plan ul { margin: 0; padding-left: 18px; color: var(--gris); display: grid; gap: 6px; }
+.nota-planes { color: var(--gris); font-size: 14px; margin: 14px 0 28px; }
+.form-titulo { margin: 0; font-size: 20px; }
+.campos-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+#form-lead .campo input { font-size: 16px; font-weight: 500; font-variation-settings: normal; }
+.campo select { font: inherit; color: var(--tinta); background: var(--papel); border: 1px solid var(--linea); border-radius: 10px; padding: 12px 14px; max-width: 560px; }
+.campo select:focus { outline: none; border-color: var(--cobalto); box-shadow: 0 0 0 3px var(--cobalto-suave); }
+.acepto { display: flex; gap: 10px; align-items: flex-start; color: var(--gris); font-size: 14px; max-width: 760px; }
+.acepto input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
