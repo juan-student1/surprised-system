@@ -1,13 +1,13 @@
 """
 CENTINELA · API del nodo (punto de entrada)
 -------------------------------------------
-Corre igual en JE (principal) y JP (respaldo). Ambos comparten Supabase.
-Si Supabase no responde, entra en MODO DEGRADADO (SQLite local + sincronización).
+Corre igual en JE (principal, Cloud Run) y JP (respaldo, VM). Ambos comparten Cloud SQL.
+Si la base no responde, entra en MODO DEGRADADO (SQLite local + sincronización).
 
 Arquitectura limpia (paquete `centinela/`):
   config.py    → constantes y entorno
   utilidades.py→ dominio puro (normalizar, score, formato…)
-  db.py        → acceso a datos (Supabase + SQLite)
+  db.py        → acceso a datos (Postgres en Cloud SQL + SQLite local)
   ia.py        → Ollama local
   servicios.py → reportes, campañas, Telegram, tareas de fondo, rate limiting
   auth.py      → panel /admin autenticado (PBKDF2 + HMAC + TOTP)
@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from centinela.config import VERSION, CORS_ORIGINS, LIMITE_GLOBAL, NODO, MANTENIMIENTO, EN_CLOUD_RUN
 from centinela.db import pool, local, evento
-from centinela.servicios import latido, sincronizador, vigilar_ia, latir_una_vez, _exceso
+from centinela.servicios import latido, sincronizador, vigilar_ia, latir_una_vez, _exceso, contar_bloqueo
 from centinela.utilidades import ip_cliente, viene_del_gateway
 from centinela import rutas
 
@@ -65,19 +65,26 @@ app.add_middleware(
 
 @app.middleware("http")
 async def guardia(request: Request, call_next):
+    resp = await _guardia(request, call_next)
+    contar_bloqueo(resp.status_code, request.url.path)   # 401/403/429 → pestaña "Seguridad" del panel
+    return resp
+
+
+async def _guardia(request: Request, call_next):
+    ruta = request.url.path
     # Modo mantenimiento: el panel puede "detener" este nodo para demostrar el failover.
     # Devuelve 503 en todo (menos /api/control, para poder reactivarlo) -> el gateway salta al otro nodo.
-    if MANTENIMIENTO["on"] and request.url.path not in ("/api/control", "/tareas/latido"):
+    if MANTENIMIENTO["on"] and ruta not in ("/api/control", "/tareas/latido"):
         r = Response('{"error":"Nodo en mantenimiento","nodo":"' + NODO + '"}', status_code=503, media_type="application/json")
         r.headers["X-Centinela-Nodo"] = NODO
         return r
     # Puerta única: con GATEWAY_SECRET, lo que no venga del Worker se rechaza (la URL de Cloud Run y la del
     # Funnel son públicas). Excepciones: salud (la usa el gateway), latido (token OIDC) y control (token propio).
-    if not viene_del_gateway(request) and request.url.path not in ("/health", "/ping", "/", "/tareas/latido", "/api/control"):
+    if not viene_del_gateway(request) and ruta not in ("/health", "/ping", "/", "/tareas/latido", "/api/control"):
         return Response('{"error":"Acceso solo por el gateway"}', status_code=403, media_type="application/json")
     # Escudo por IP en el propio nodo: si el gateway cae o atacan por el Funnel directo,
     # ninguna IP puede inundar la API. /health, /ping y / quedan libres (los usa el clúster).
-    if request.url.path not in ("/health", "/ping", "/", "/tareas/latido"):
+    if ruta not in ("/health", "/ping", "/", "/tareas/latido"):
         if _exceso("global", ip_cliente(request), LIMITE_GLOBAL, 60):
             r = Response('{"error":"Demasiadas peticiones"}', status_code=429, media_type="application/json")
             r.headers["Retry-After"] = "60"
@@ -86,7 +93,6 @@ async def guardia(request: Request, call_next):
     resp = await call_next(request)
     resp.headers["X-Centinela-Nodo"] = NODO
     return resp
-
 
 rutas.registrar(app)
 

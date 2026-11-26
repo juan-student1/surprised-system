@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field
 
 from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, TAREAS_SA, TAREAS_AUDIENCIA, log
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
-from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha
+from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha, hash_reportero
 from .ia import ollama_disponible, ollama_chat
-from .servicios import registrar_reporte, telegram_enviar, tareas_programadas
+from .servicios import registrar_reporte, telegram_enviar, tareas_programadas, _exceso
 from . import auth as authmod
 
 RE_NUM = re.compile(r"(?:\+|00)?\d[\d\s\-().]{5,17}\d")
@@ -33,6 +33,22 @@ class MensajeBot(BaseModel):
     texto: str | None = Field(None, max_length=1000)
     contacto: str | None = Field(None, max_length=40)
     nombre: str | None = Field(None, max_length=80)
+
+SEGMENTOS = ("persona", "call_center", "cooperativa", "banco", "operador", "otro")
+PLANES = ("gratis", "pro", "empresa")
+RE_CORREO = re.compile(r"^[^@\s<>]{1,64}@[^@\s<>]{1,190}\.[A-Za-z]{2,24}$")
+
+class Lead(BaseModel):
+    """Formulario "Para empresas" de la web (JM · ventas)."""
+    nombre: str = Field(..., min_length=2, max_length=80)
+    empresa: str | None = Field(None, max_length=120)
+    correo: str = Field(..., max_length=160)
+    telefono: str | None = Field(None, max_length=25)
+    segmento: str = Field("otro", max_length=20)
+    plan: str = Field("empresa", max_length=10)
+    mensaje: str | None = Field(None, max_length=800)
+    acepta_datos: bool = False
+    sitio_web: str | None = Field(None, max_length=200)   # trampa para bots: un humano nunca la ve ni la llena
 
 AYUDA = ("🛡️ Soy Centinela, tu escudo contra llamadas spam y estafas.\n\n"
          "• Envíame un número (ej. 3001234567) y te digo si es peligroso.\n"
@@ -135,6 +151,15 @@ def _peticion_google():
             return r
         _google["req"] = pedir
     return _google["req"]
+
+def limpio(t: str | None) -> str | None:
+    """Quita caracteres de control (saltos de línea incluidos) de un texto libre del formulario."""
+    return (re.sub(r"[\x00-\x1f\x7f]", " ", t).strip() or None) if t else None
+
+def _solo_gateway_con_token(request: Request):
+    """Rutas internas (/api/interno/*): solo el panel del gateway, con el CONTROL_TOKEN."""
+    token = request.headers.get("x-centinela-control") or ""
+    if not CONTROL_TOKEN or not hmac.compare_digest(token, CONTROL_TOKEN): raise HTTPException(401, "No autorizado")
 
 def registrar(app: FastAPI):
     @app.get("/")
@@ -244,6 +269,47 @@ def registrar(app: FastAPI):
             if not completo: f.pop("dispositivo", None)
             f["segundos"] = int((datetime.now(timezone.utc) - f["creado"]).total_seconds())
         return filas
+
+    @app.post("/api/leads")
+    def nuevo_lead(lead: Lead, request: Request, bg: BackgroundTasks):
+        ip = ip_cliente(request)
+        if _exceso("leads", ip, 3, 3600): raise HTTPException(429, "Ya recibimos tus mensajes. Te contactamos pronto.")
+        if lead.sitio_web: return {"ok": True}   # bot: se le responde igual, pero no se guarda nada
+        if not lead.acepta_datos: raise HTTPException(422, "Debes autorizar el tratamiento de tus datos para que te contactemos.")
+        correo = lead.correo.strip().lower()
+        if not RE_CORREO.match(correo): raise HTTPException(422, "Correo inválido")
+        if lead.segmento not in SEGMENTOS or lead.plan not in PLANES: raise HTTPException(422, "Segmento o plan inválido")
+        try:
+            fila = q("""insert into leads (nombre, empresa, correo, telefono, segmento, plan, mensaje, acepta_datos, origen_hash, nodo)
+                        values (%s,%s,%s,%s,%s,%s,%s,true,%s,%s) returning id""",
+                     (limpio(lead.nombre), limpio(lead.empresa), correo, limpio(lead.telefono), lead.segmento, lead.plan,
+                      limpio(lead.mensaje), hash_reportero(ip), NODO), uno=True)
+        except Exception as e:
+            log.warning("No se pudo guardar el lead: %s", e)
+            raise HTTPException(503, "No pudimos guardar tu mensaje. Intenta de nuevo en unos minutos.")
+        # Aviso al equipo SIN datos personales (el correo y el teléfono solo se ven en el panel)
+        bg.add_task(telegram_enviar, f"💼 Nuevo lead #{fila['id']}: {limpio(lead.empresa) or 'persona'} · {lead.segmento} · plan {lead.plan}")
+        return {"ok": True, "id": fila["id"]}
+
+    @app.get("/api/interno/leads")
+    def leads_internos(request: Request, limite: int = 50):
+        _solo_gateway_con_token(request)
+        return q("""select id, nombre, empresa, correo, telefono, segmento, plan, mensaje, estado, nodo, creado
+                    from leads order by creado desc limit %s""", (max(1, min(limite, 200)),), todos=True)
+
+    @app.get("/api/interno/seguridad")
+    def seguridad_interna(request: Request, horas: int = 24):
+        _solo_gateway_con_token(request)
+        horas = max(1, min(horas, 168))
+        por_hora = q("""select hora, sum(total) filter (where codigo=401) c401, sum(total) filter (where codigo=403) c403,
+                               sum(total) filter (where codigo=429) c429
+                        from seguridad_hora where hora > now() - make_interval(hours => %s) group by hora order by hora desc""",
+                     (horas,), todos=True)
+        por_ruta = q("""select ruta, codigo, sum(total) total from seguridad_hora where hora > now() - make_interval(hours => %s)
+                        group by 1, 2 order by 3 desc limit 15""", (horas,), todos=True)
+        eventos = q("""select nodo, tipo, detalle, creado from eventos where tipo in ('login_fallido','mantenimiento','reactivado','campana')
+                       order by creado desc limit 15""", todos=True)
+        return {"horas": horas, "por_hora": por_hora, "por_ruta": por_ruta, "eventos": eventos}
 
     @app.post("/api/bot")
     def bot(m: MensajeBot, request: Request, bg: BackgroundTasks):

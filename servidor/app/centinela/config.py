@@ -9,7 +9,8 @@ import logging
 import os
 from datetime import datetime, timezone
 
-VERSION = "1.5.0"
+VERSION = "1.6.0"
+# v1.6.0 = formulario de leads (/api/leads), métricas de seguridad por hora y rutas internas del panel (/api/interno/*).
 # v1.5.0 = puede correr en Cloud Run (tareas por Cloud Scheduler + IA por proxy de Tailscale) con Cloud SQL.
 # v1.4.0 = misma API que antes, solo reorganizada en capas (config/utils/db/ia/servicios/auth/rutas).
 NODO = os.getenv("NODO_NOMBRE", "JE")
