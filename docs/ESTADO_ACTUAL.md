@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑26** (tarde) · rama: `docs/expo-martes` · **expo: martes 2026‑12‑01** → [`18_EXPO.md`](18_EXPO.md)
+> Última actualización: **2026‑11‑26** (noche) · rama: `feat/apartados-por-rol` · **expo: martes 2026‑12‑01** → [`18_EXPO.md`](18_EXPO.md)
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -17,10 +17,13 @@
 | Fase 0: diagnóstico del repo | 2026‑11‑25 | JE |
 | **Fases 3 y 4 activadas en la nube** (2026‑11‑26): Vertex AI habilitado + `roles/aiplatform.user` para `centinela-run`, prueba de `gemini-3.8-flash` en `global` ✅; dataset `centinela_analitica` + IAM mínima; **JE v1.8.0** (revisión `centinela-je-00010`) con `vertex:true` y exportación encendida; trabajo `centinela-exportar` (01:15 diario) y primera exportación `200 OK` (8 tablas con datos); 10 vistas creadas y consultadas | 2026‑11‑26 | JE |
 | **Fase 5 · Pulir y vender** (PR #7, merge y gateway desplegado 2026‑11‑26): auditoría final (0 secretos, 0 vulnerabilidades altas), web móvil corregida (menú visible a 360‑390 px), README como producto, pitch y guion por rol, doc 12 al día | 2026‑11‑26 | JE |
-| **Fase 4 · Analítica** (PR #6, merge 2026‑11‑26): exportación a BigQuery, 8 tablas, 10 vistas, guía de Looker; pendiente de activar## En curso 🔄
+| **Fase 4 · Analítica** (PR #6, merge 2026‑11‑26): exportación a BigQuery, 8 tablas, 10 vistas, guía de Looker; pendiente de activar | 2026‑11‑26 | JE |
+| Guía de la expo [`18_EXPO.md`](18_EXPO.md) (PR #10, merge) | 2026‑11‑26 | JE |
+
+## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| Preparación de la expo: [`18_EXPO.md`](18_EXPO.md) (lo listo, checklist del día, plan B, verificación final) | `docs/expo-martes` | JE |
+| **Apartados por rol en la web pública:** `/arquitectura` (JE), `/seguridad` (JP), `/empresas` (JM), con índice, estado en vivo, diagrama, STRIDE/OWASP, planes y piloto; portada enlazada. Falta: revisión visual de Juan y `wrangler deploy` con su ok | `feat/apartados-por-rol` | JE (+ JP y JM revisan su página) |
 
 ## Pendiente ⏳
 | # | Qué | Origen | Responsable | Bloquea |
@@ -37,10 +40,12 @@
 
 ## ▶️ Próxima sesión (empezar aquí)
 **Todo el sistema está en producción y JP está listo.** Falta para la expo del martes 2026‑12‑01 ([`18_EXPO.md`](18_EXPO.md)):
-1. **PC de mesa:** verificación final (`18_EXPO.md` §4: `auditar .`, Lighthouse, Observatory) y anotar resultados en doc 14.
-2. **Looker Studio** (`17_LOOKER_STUDIO.md` §5).
+1. **Apartados por rol:** revisar `/arquitectura`, `/seguridad` y `/empresas` en local (`cd gateway && npx wrangler dev`), merge del PR y `npx wrangler deploy` con el ok de Juan. JP y JM revisan el texto de su página.
+2. **PC de mesa:** verificación final (`18_EXPO.md` §4: `auditar .`, Lighthouse, Observatory) y anotar resultados en doc 14 (incluye la cabecera `Permissions-Policy`).
+3. **Looker Studio** (`17_LOOKER_STUDIO.md` §5) y su enlace de solo lectura en README y doc 13.
 
 ## Notas de la última sesión
+- Sesión 2026‑11‑26 noche (PC de mesa): apartados profesionales por rol en la web (páginas estáticas servidas por el mismo Worker, misma CSP, sin dependencias nuevas): `web/arquitectura.html`, `web/seguridad.html`, `web/empresas.html`, `web/paginas.css`, `web/paginas.js`. La página de seguridad es pública: describe controles sin detalles explotables.
 - Sesión 2026‑11‑26 tarde: JP conectado y verificado (v1.8.0, Cloud SQL, secretos, 403 directo). Guía de la expo en `18_EXPO.md`. Doc 08 marcado como histórico. JP confirmó la hora sincronizada. Sin ensayo formal (decisión de Juan).
 - Sesión 2026‑11‑26 (PC de mesa): merge de las Fases 4 y 5; gateway con la web corregida para celular; Vertex y BigQuery activados. En producción: JE v1.8.0 con IA híbrida y exportación diaria a BigQuery.
 - Sesión 2026‑11‑25 (PC de mesa): Fases 0‑3 cerradas y desplegadas (Vertex aún apagado); Fase 4 en PR #6.

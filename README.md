@@ -6,6 +6,10 @@
 
 [![CI](https://github.com/juan-student1/surprised-system/actions/workflows/ci.yml/badge.svg)](https://github.com/juan-student1/surprised-system/actions/workflows/ci.yml)
 
+| 🏗️ [**Arquitectura**](https://centinela.juan-gallego-sec.workers.dev/arquitectura) | 🔐 [**Seguridad**](https://centinela.juan-gallego-sec.workers.dev/seguridad) | 💼 [**Empresas**](https://centinela.juan-gallego-sec.workers.dev/empresas) |
+|---|---|---|
+| Estado en vivo, diagrama, tolerancia a fallos, 14 decisiones y costos · **JE** | Capas de defensa, STRIDE, OWASP API Top 10, privacidad y auditorías · **JP** | Soluciones por sector, planes, mercado y piloto de 30 días · **JM** |
+
 ---
 
 ## El problema

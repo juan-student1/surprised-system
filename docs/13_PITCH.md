@@ -102,6 +102,12 @@ Usuarios (web · Telegram · Android)
 - *¿Cuánto cuesta escalar?* → Hoy ~11 USD/mes; el techo es `max-instances=1` por el estado en memoria, que se movería a Memorystore si hubiera clientes (ADR‑011). [JE]
 - *¿Los datos personales van a Google o a la IA?* → No: la IA primero es local; a Gemini y a BigQuery solo van datos agregados y números enmascarados. [JP]
 
+## Apoyo visual por rol (web pública)
+Cada integrante tiene su apartado en la web, pensado para mostrarlo en pantalla mientras habla:
+- **JE** → https://centinela.juan-gallego-sec.workers.dev/arquitectura (estado en vivo de JE y JP, diagrama, tolerancia a fallos, ADR, costos).
+- **JP** → https://centinela.juan-gallego-sec.workers.dev/seguridad (capas de defensa, STRIDE, OWASP API Top 10, privacidad, pruebas y auditorías).
+- **JM** → https://centinela.juan-gallego-sec.workers.dev/empresas (problema con fuentes, soluciones por sector, planes, mercado, piloto, preguntas).
+
 ## Antes de exponer (checklist)
 - [ ] `/gateway/estado` con JE y JP `online: true` (JP con bloque 2 y Cloud SQL, `12_PRUEBA_CON_JP.md`).
 - [ ] Lenovo prendido, cargando y sin suspenderse (`11_LENOVO_IA.md` paso 8).

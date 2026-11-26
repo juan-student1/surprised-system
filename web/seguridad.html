@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seguridad · Centinela</title>
+<meta name="description" content="Centro de confianza de Centinela: capas de defensa, modelo de amenazas STRIDE, OWASP API Top 10, privacidad bajo la Ley 1581, pruebas automáticas y auditorías.">
+<meta name="theme-color" content="#16203A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%232346D8'/%3E%3Cpath d='M11 16.5l3.5 3.5L21 13' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/paginas.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <a class="marca" href="/" aria-label="Centinela, inicio">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z"/><path class="check" d="M11 16.5l3.5 3.5L21 13"/></svg>
+    Centinela
+  </a>
+  <nav class="menu-nav" aria-label="Principal">
+    <button class="menu-btn" type="button" popovertarget="menu" aria-controls="menu">Menú</button>
+    <div class="menu" id="menu" popover="auto">
+      <a href="/">Consultar un número</a>
+      <a href="/arquitectura">Arquitectura</a>
+      <a href="/seguridad" aria-current="page">Seguridad</a>
+      <a href="/empresas">Empresas</a>
+      <a href="/admin" rel="noopener">Panel admin</a>
+      <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
+    </div>
+  </nav>
+  <a class="pulso" href="/arquitectura#estado" id="pulso">
+    <span class="punto"></span><span id="pulso-txt" aria-live="polite">Conectando…</span>
+  </a>
+</header>
+
+<main id="contenido">
+  <section class="doc-hero" aria-labelledby="titulo">
+    <ol class="doc-miga" aria-label="Ruta"><li><a href="/">Centinela</a></li><li>Plataforma</li><li aria-current="page">Seguridad</li></ol>
+    <p class="doc-eti">Centro de confianza · Seguridad</p>
+    <h1 id="titulo">Seguridad por diseño, verificada en cada cambio</h1>
+    <p class="doc-lead">Un servicio contra el fraude no puede ser la puerta de entrada de otro fraude. Por eso Centinela parte de tres principios: nunca confiar en lo que manda el cliente, dar a cada pieza solo el permiso que necesita y no guardar datos personales que no hagan falta. Esta página explica cómo lo cumplimos, sin publicar detalles que sirvan para atacarnos.</p>
+    <ul class="doc-meta">
+      <li>Responsable: <b>JP · Seguridad</b></li>
+      <li>Marco: <b>STRIDE + OWASP API Top 10 (2023)</b></li>
+      <li>Datos personales: <b>Ley 1581 de 2012</b></li>
+      <li>Revisado: <b>noviembre de 2026</b></li>
+    </ul>
+    <ul class="kpis" aria-label="Cifras clave">
+      <li><strong>0</strong><span>secretos en el historial del código público</span></li>
+      <li><strong>0</strong><span>vulnerabilidades altas o críticas en dependencias</span></li>
+      <li><strong>10 / 10</strong><span>riesgos del OWASP API Top 10 con controles</span></li>
+      <li><strong>122</strong><span>pruebas automáticas en cada cambio</span></li>
+      <li><strong>5 capas</strong><span>de defensa entre Internet y los datos</span></li>
+    </ul>
+  </section>
+
+  <div class="doc-cuerpo">
+    <aside class="doc-indice" aria-label="Índice">
+      <p>En esta página</p>
+      <nav aria-label="En esta página">
+        <ol>
+          <li><a href="#principios">Principios</a></li>
+          <li><a href="#capas">Capas de defensa</a></li>
+          <li><a href="#amenazas">Modelo de amenazas</a></li>
+          <li><a href="#owasp">OWASP API Top 10</a></li>
+          <li><a href="#privacidad">Privacidad y datos</a></li>
+          <li><a href="#pruebas">Pruebas y auditorías</a></li>
+          <li><a href="#mejoras">Mejoras en curso</a></li>
+          <li><a href="#reportar">Reportar una vulnerabilidad</a></li>
+        </ol>
+      </nav>
+      <div class="doc-responsable"><b>JP · Seguridad</b>Nodo de respaldo, auditoría, modelo de amenazas y pruebas de ataque controladas.</div>
+    </aside>
+
+    <article class="doc-contenido">
+      <section class="doc-sec" id="principios" aria-labelledby="t-principios">
+        <h2 id="t-principios">Principios</h2>
+        <p class="sub">Las reglas que guían cada decisión técnica.</p>
+        <ul class="tarjetas">
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🛡️</span><h3>Defensa en profundidad</h3><p>Ninguna capa es la única barrera: si una falla, la siguiente sigue protegiendo.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🔑</span><h3>Privilegio mínimo</h3><p>Cada servicio tiene su propia identidad y solo los permisos que usa; los secretos se entregan uno por uno.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🚪</span><h3>Una sola puerta</h3><p>Todo el tráfico pasa por el gateway; los servidores rechazan lo que llegue por otro camino.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🙈</span><h3>Privacidad por diseño</h3><p>Reporteros anónimos, números enmascarados al público e IA que no envía los reportes a terceros.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🔁</span><h3>Verificación continua</h3><p>Pruebas, escaneo de secretos y de vulnerabilidades en cada cambio, más auditorías manuales.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">📖</span><h3>Transparencia</h3><p>El código es público y las decisiones están documentadas; lo único privado son los secretos.</p></li>
+        </ul>
+      </section>
+
+      <section class="doc-sec" id="capas" aria-labelledby="t-capas">
+        <h2 id="t-capas">Capas de defensa</h2>
+        <p class="sub">El camino de una petición, desde Internet hasta los datos.</p>
+        <ol class="capas">
+          <li><div><b>1 · Borde</b><small>Cloudflare</small></div><p>Absorbe ataques de volumen, fuerza HTTPS (HSTS) y publica una política de contenido estricta (CSP) que solo permite código propio. Corta cuerpos de más de 4 KB.</p></li>
+          <li><div><b>2 · Gateway</b><small>Worker de Centinela</small></div><p>Límites por IP (más estrictos para el chat), borra cualquier encabezado de identidad que intente mandar el cliente y aloja el panel con contraseña PBKDF2, doble factor, sesión de 20 minutos y protección anti‑CSRF.</p></li>
+          <li><div><b>3 · Nodos</b><small>JE y JP</small></div><p>Solo atienden peticiones firmadas por el gateway; tienen sus propios límites, validan cada campo y comparan credenciales en tiempo constante. Corren sin privilegios de administrador.</p></li>
+          <li><div><b>4 · Datos</b><small>Cloud SQL</small></div><p>Sin acceso por red pública: solo por un conector que exige identidad. Consultas siempre parametrizadas y un usuario de respaldo que no puede cambiar la estructura.</p></li>
+          <li><div><b>5 · Nube</b><small>IAM y Secret Manager</small></div><p>Una cuenta de servicio por función, permisos a nivel de recurso, tareas automáticas con tokens firmados por Google y ninguna llave guardada en el código.</p></li>
+        </ol>
+      </section>
+
+      <section class="doc-sec" id="amenazas" aria-labelledby="t-amenazas">
+        <h2 id="t-amenazas">Modelo de amenazas (STRIDE)</h2>
+        <p class="sub">Qué protegemos: la integridad del puntaje de riesgo, la disponibilidad del servicio, los datos personales y las identidades de la nube.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Amenaza</th><th scope="col">Ejemplo</th><th scope="col">Cómo se controla</th><th scope="col">Estado</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Suplantación</th><td>Hacerse pasar por muchas personas para "hundir" un número inocente</td><td>El servidor decide quién reporta (no el cliente); el riesgo cuenta personas distintas; límite de reportes por IP</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Suplantación</th><td>Hacerse pasar por el bot, el reloj del sistema o un administrador</td><td>Credencial propia del bot, tokens firmados por Google, doble factor y sesión atada al navegador</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Alteración</th><td>Saltarse el gateway o inyectar SQL</td><td>Puerta única con secreto compartido; consultas parametrizadas</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Alteración</th><td>Una dependencia comprometida</td><td>Versiones fijas y escaneo de vulnerabilidades y secretos en cada cambio</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Repudio</th><td>"Yo no detuve el servidor"</td><td>Bitácora de eventos (mantenimiento, accesos fallidos, campañas) y registros de la nube</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Divulgación</th><td>Ver llamadas reales, leads o datos internos</td><td>Números enmascarados al público, leads solo en el panel, información interna filtrada</td><td><span class="chip ok">Controlado</span></td></tr>
+              <tr><th scope="row">Denegación de servicio</th><td>Inundar la API o gastar la IA</td><td>Absorción en el borde, límites por IP en dos capas, topes de IA y respuesta inmediata a preguntas fuera de tema</td><td><span class="chip aviso">Mejorando</span></td></tr>
+              <tr><th scope="row">Elevación de privilegios</th><td>Una pieza con más permisos de los que necesita</td><td>Cuentas por función, secretos uno por uno, contenedor sin root, accesos de solo lectura para auditar</td><td><span class="chip ok">Controlado</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="owasp" aria-labelledby="t-owasp">
+        <h2 id="t-owasp">OWASP API Security Top 10 (2023)</h2>
+        <p class="sub">El estándar de referencia para la seguridad de APIs, punto por punto.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">#</th><th scope="col">Riesgo</th><th scope="col">Control en Centinela</th><th scope="col">Estado</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">API1</th><td>Autorización a nivel de objeto</td><td>No hay objetos por usuario; lo sensible exige credencial</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API2</th><td>Autenticación rota</td><td>PBKDF2 + doble factor + bloqueo por intentos; credenciales en tiempo constante; tokens firmados</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API3</th><td>Autorización a nivel de propiedad</td><td>Campos de identidad del cliente se ignoran; respuestas sin datos internos</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API4</th><td>Consumo de recursos sin límite</td><td>Límites por IP, tamaño máximo de cada campo y del cuerpo, topes de IA</td><td><span class="chip aviso">Mejorando</span></td></tr>
+              <tr><th scope="row">API5</th><td>Autorización a nivel de función</td><td>Funciones internas con credencial propia; panel solo en el borde</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API6</th><td>Abuso de flujos de negocio</td><td>Riesgo por personas distintas, límites de reportes y de solicitudes comerciales, trampa para bots</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API7</th><td>SSRF</td><td>La API nunca visita URL que mande el usuario; destinos fijos</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API8</th><td>Configuración insegura</td><td>CSP, HSTS, sin root, base sin IP pública, puerta única</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API9</th><td>Inventario de la API</td><td>Rutas documentadas y probadas; la documentación interactiva no se publica</td><td><span class="chip ok">Cumple</span></td></tr>
+              <tr><th scope="row">API10</th><td>Consumo inseguro de APIs</td><td>Respuestas de la IA validadas contra una lista cerrada; tiempos máximos en toda llamada externa</td><td><span class="chip ok">Cumple</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="privacidad" aria-labelledby="t-privacidad">
+        <h2 id="t-privacidad">Privacidad y datos</h2>
+        <p class="sub">Qué guardamos, qué no y quién lo puede ver. Tratamiento conforme a la Ley 1581 de 2012 de protección de datos personales.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Dato</th><th scope="col">Qué se guarda</th><th scope="col">Quién lo ve</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Reporte de una llamada</th><td>Número reportado, tipo, descripción opcional, canal y un identificador anónimo de quien reporta (huella con sal, no la IP ni el nombre)</td><td>El número y su riesgo son públicos; quien reportó, nadie</td></tr>
+              <tr><th scope="row">Llamada real recibida (app)</th><td>Número que llamó, nivel de riesgo y hora</td><td>Al público, siempre enmascarado (<code>+57 300 ••• 4567</code>); completo solo con la credencial del celular</td></tr>
+              <tr><th scope="row">Solicitud de una empresa</th><td>Nombre, empresa, correo, teléfono y mensaje, con autorización expresa</td><td>Solo el equipo, en el panel con doble factor; se borran cuando lo pidan</td></tr>
+              <tr><th scope="row">Analítica</th><td>Solo conteos y tendencias agregadas, con números enmascarados</td><td>Tablero de Looker Studio; nunca acceso a producción</td></tr>
+              <tr><th scope="row">Conversaciones con la IA</th><td>Se procesan en un equipo propio; la IA en la nube solo como respaldo, con datos anonimizados</td><td>No se usan para entrenar modelos de terceros</td></tr>
+              <tr><th scope="row">Métricas de seguridad</th><td>Conteos de bloqueos por hora y tipo de ruta, sin direcciones IP</td><td>Equipo, en el panel</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="pruebas" aria-labelledby="t-pruebas">
+        <h2 id="t-pruebas">Pruebas y auditorías</h2>
+        <p class="sub">La seguridad se demuestra, no se promete.</p>
+        <h3>En cada cambio (integración continua)</h3>
+        <ul class="tarjetas">
+          <li class="tarjeta"><h4>gitleaks</h4><p>Busca secretos en todo el historial del código.</p></li>
+          <li class="tarjeta"><h4>trivy</h4><p>Vulnerabilidades conocidas en dependencias e imágenes.</p></li>
+          <li class="tarjeta"><h4>pytest · 122 pruebas</h4><p>Incluye pruebas de autorización, límites y validación.</p></li>
+          <li class="tarjeta"><h4>ruff · shellcheck</h4><p>Calidad del código y de los scripts de operación.</p></li>
+        </ul>
+        <h3>Ataques controlados contra nuestro propio servicio</h3>
+        <p>Un guion reproducible que cualquiera del equipo puede correr antes de una demo. Cada resultado se ve después en la pestaña Seguridad del panel.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Prueba</th><th scope="col">Respuesta esperada</th><th scope="col">Qué demuestra</th></tr></thead>
+            <tbody>
+              <tr><td>Ráfaga de 250 peticiones en paralelo</td><td><code>429</code>, el servicio sigue arriba</td><td>Límites por IP en dos capas</td></tr>
+              <tr><td>Cuerpo de 20 KB</td><td><code>413</code></td><td>El borde corta cargas grandes</td></tr>
+              <tr><td>Acción sensible sin credencial</td><td><code>401</code></td><td>Autenticación obligatoria</td></tr>
+              <tr><td>Inyección SQL en el número</td><td><code>422</code>, base intacta</td><td>Validación + consultas parametrizadas</td></tr>
+              <tr><td>Fuerza bruta al panel</td><td><code>429</code> tras 5 intentos</td><td>Bloqueo de inicio de sesión</td></tr>
+              <tr><td>Saltarse el gateway</td><td><code>403</code></td><td>Puerta única</td></tr>
+              <tr><td>Rutas internas desde afuera</td><td><code>404</code></td><td>Funciones internas ocultas</td></tr>
+              <tr><td>Spam al formulario de empresas</td><td><code>429</code> y nada guardado</td><td>Anti‑spam de solicitudes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Auditorías</h3>
+        <ol class="linea-tiempo">
+          <li><time>17 nov 2026</time><b>Auditoría completa del código y la web</b><span>0 críticos. Se corrigieron la identidad de quien reporta, la privacidad de las llamadas, una dependencia vulnerable y la puerta única.</span></li>
+          <li><time>20 nov 2026</time><b>Auditoría de la migración a Google Cloud</b><span>Se actualizó una imagen base con fallas críticas conocidas, se aislaron credenciales del proceso de la API y se reforzó la verificación de tareas firmadas.</span></li>
+          <li><time>26 nov 2026</time><b>Auditoría final antes de la expo</b><span>0 secretos y 0 vulnerabilidades altas; nodo de respaldo verificado con los mismos controles que el principal.</span></li>
+        </ol>
+      </section>
+
+      <section class="doc-sec" id="mejoras" aria-labelledby="t-mejoras">
+        <h2 id="t-mejoras">Mejoras en curso</h2>
+        <p class="sub">Ningún sistema está terminado. Esto es lo que sigue, priorizado por riesgo (todo de severidad baja).</p>
+        <ul class="tarjetas">
+          <li class="tarjeta"><h3>Límite global en el borde</h3><p>Llevar los límites del chat y del formulario comercial a una regla global de Cloudflare, además de los límites por centro de datos.</p></li>
+          <li class="tarjeta"><h3>Red privada mínima</h3><p>Que el nodo en la nube solo pueda hablar con el servicio de IA dentro de la red privada, con reglas de acceso por etiqueta.</p></li>
+          <li class="tarjeta"><h3>Credenciales del celular</h3><p>Unificar la forma en que los atajos del celular envían su credencial, igual que ya lo hace la app Android.</p></li>
+          <li class="tarjeta"><h3>Llaves de API por empresa</h3><p>Cuando haya un cliente piloto: llave propia, cuota mensual y revocación individual.</p></li>
+        </ul>
+      </section>
+
+      <section class="doc-sec" id="reportar" aria-labelledby="t-reportar">
+        <h2 id="t-reportar">Reportar una vulnerabilidad</h2>
+        <p class="sub">Si encuentras un problema de seguridad, queremos saberlo.</p>
+        <ol class="pasos">
+          <li><b>Escríbenos en privado.</b><span>Abre un aviso privado en la pestaña <a href="https://github.com/juan-student1/surprised-system/security">Security del repositorio</a> o usa el <a href="/#empresas">formulario de contacto</a> pidiendo un canal privado.</span></li>
+          <li><b>Danos tiempo para corregir.</b><span>No publiques los detalles hasta que te confirmemos que está resuelto.</span></li>
+          <li><b>Prueba con cuidado.</b><span>Nada de denegación de servicio, ni acceso a datos de otras personas, ni ataques a terceros. Usa solo números de prueba.</span></li>
+        </ol>
+        <p class="nota">Te daremos crédito en la documentación si así lo quieres.</p>
+      </section>
+    </article>
+  </div>
+</main>
+
+<footer class="pie-doc">
+  <div>
+    <p><b>Centinela</b> · Antes de contestar, sabe quién te llama.</p>
+    <p>Hecho por JE, JP y JM · Ingeniería de Sistemas · Uniremington · 2026</p>
+  </div>
+  <nav aria-label="Producto"><h2>Producto</h2><ul><li><a href="/">Consultar un número</a></li><li><a href="/#reportar">Reportar una llamada</a></li><li><a href="/#comunidad">Comunidad</a></li><li><a href="/#app">App Android</a></li></ul></nav>
+  <nav aria-label="Plataforma"><h2>Plataforma</h2><ul><li><a href="/arquitectura">Arquitectura</a></li><li><a href="/seguridad">Seguridad</a></li><li><a href="/arquitectura#estado">Estado en vivo</a></li><li><a href="https://github.com/juan-student1/surprised-system">Código en GitHub</a></li></ul></nav>
+  <nav aria-label="Empresas"><h2>Empresas</h2><ul><li><a href="/empresas">Soluciones</a></li><li><a href="/empresas#planes">Planes</a></li><li><a href="/empresas#piloto">Piloto</a></li><li><a href="/#empresas">Hablar con ventas</a></li></ul></nav>
+</footer>
+
+<script src="/paginas.js"></script>
+</body>
+</html>
