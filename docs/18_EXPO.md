@@ -26,12 +26,10 @@
 ## 2 · Lo que falta antes del martes ⏳
 | # | Qué | Quién | Cuándo |
 |---|---|---|---|
-| 1 | **Panel de Looker Studio** (7 páginas, [`17_LOOKER_STUDIO.md`](17_LOOKER_STUDIO.md) §5) + enlace de solo lectura | JE | Antes del ensayo |
-| 2 | **Verificación final en el PC de mesa** (auditoría de seguridad + web moderna, §4) | JE | Antes del ensayo |
-| 3 | JP: hora de la VM sincronizada (`timedatectl` → `synchronized: yes`); si no, vuelve `db:false` | JP | Ya |
-| 4 | **Ensayo completo** con cronómetro (12 min) y **video del failover** como plan B | JE · JP · JM | Domingo o lunes |
-| 5 | JM confirma la fuente de cada cifra que va a decir (en especial el 71 %, fuente [4] de `JM_VENTAS.md`) | JM | Antes del ensayo |
-| 6 | Borrar el lead de prueba #1 (o dejarlo como ejemplo en la pestaña Ventas) | JE | Opcional |
+| 1 | **Panel de Looker Studio** (7 páginas, [`17_LOOKER_STUDIO.md`](17_LOOKER_STUDIO.md) §5) + enlace de solo lectura | JE | Antes del martes |
+| 2 | **Verificación final en el PC de mesa** (auditoría de seguridad + web moderna, §4) | JE | Antes del martes |
+
+✔ Hecho el 2026‑11‑26: JP con la hora sincronizada; fuente del 71 % verificada: DataCrédito Experian 2026, "en el último año" (`roles/JM_VENTAS.md` [4]).
 
 ## 3 · El día de la expo
 ### La noche anterior
@@ -39,7 +37,7 @@
 - [ ] Lenovo prendido, conectado a la corriente y sin suspenderse ([`11_LENOVO_IA.md`](11_LENOVO_IA.md) paso 8).
 - [ ] Celular con la app *Centinela llamadas* cargado; otro celular listo para llamarlo.
 - [ ] Looker con los datos del día (la exportación corre a la 01:15).
-- [ ] Video del failover y capturas del panel y de Looker en el portátil y en un celular (plan B).
+- [ ] Capturas del panel y de Looker en el portátil y en un celular (plan B).
 
 ### 30 min antes (en el salón)
 ```bash
@@ -72,7 +70,7 @@ Al pulsar *Detener JE* cambia `JE → JP` sin `SIN RESPUESTA`; con *Reactivar JE
 | Falla | Qué hacer |
 |---|---|
 | Internet del salón | Hotspot del celular; JE está en la nube y no depende del salón |
-| JP `online:false` o `db:false` | En JP: `timedatectl`, `sudo systemctl restart cloudsql-proxy centinela` ([`12_PRUEBA_CON_JP.md`](12_PRUEBA_CON_JP.md) "Si algo falla"); si no sale, mostrar el **video** del failover |
+| JP `online:false` o `db:false` | En JP: `timedatectl`, `sudo systemctl restart cloudsql-proxy centinela` ([`12_PRUEBA_CON_JP.md`](12_PRUEBA_CON_JP.md) "Si algo falla"); si no sale, explicar el failover con el panel (pestaña Arquitectura) |
 | Lenovo apagado (IA) | No pasa nada: responde Gemini (se ve en la pestaña IA) — se puede contar como otro failover |
 | Looker no carga | Capturas |
 | Se venció la sesión del panel | Volver a entrar (clave + Aegis) |
@@ -112,6 +110,7 @@ Y en el navegador (son públicos y no atacan nada, solo leen la página):
 Los reportes de Lighthouse quedan en el PC (no subirlos al repo). Lo que salga se anota en `docs/14_AUDITORIA_Y_MEJORAS.md` y, si hay que corregir algo, va en una rama con su PR.
 
 ## 5 · Cifras para decir de memoria
+- **71 %** de los colombianos recibió al menos un intento de fraude en el último año (DataCrédito Experian, 2026).
 - Riesgo por **personas distintas**: 1 → 30, 2 → 50, **3 → 65 (alto)**, 5 → 83; 3 personas en 15 min = alerta de campaña.
 - Failover en **menos de 1 s**; JE caído se recuerda **30 s**.
 - **≈ 11 USD/mes** en total; Gemini con tope de **20 llamadas/hora y 100/día**.

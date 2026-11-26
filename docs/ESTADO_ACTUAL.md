@@ -27,25 +27,21 @@
 |---|---|---|---|---|
 | 1 | **Panel de Looker Studio** (`17_LOOKER_STUDIO.md` §5) + enlace de solo lectura | Fase 4 | JE | Expo |
 | 2 | **Verificación final en el PC de mesa**: `auditar .`, Lighthouse, Observatory (`18_EXPO.md` §4); hallazgos a doc 14 | Fase 5 | JE | Expo |
-| 3 | JP: confirmar `timedatectl` → `synchronized: yes` (si no, `apt install systemd-timesyncd`) y apagar la VM con `poweroff`, no suspender | 2026‑11‑26 | JP | Expo |
-| 4 | **Ensayo** completo con cronómetro + video del failover (plan B) | `13_PITCH.md` | JE · JP · JM | Expo |
-| 5 | JM: confirmar el enlace exacto del dato "71 %" (fuente [4] de `JM_VENTAS.md`) | Fase 2 | JM | Expo |
-| 6 | Cabecera `Permissions-Policy` en la web (aviso menor de los analizadores) | 2026‑11‑26 | JE | — |
-| 7 | Borrar el lead de prueba #1; correo de JP para `09_lectura_jp.sh` (opcional) | Fase 2 | JE | — |
-| 8 | C6: ACL de Tailscale con `tag:centinela-run` + llave con tag + `TS_TAGS=… nube/05_desplegar.sh` | doc 15 §2.6 | JE | — |
-| 9 | B3: quitar el token por URL en `/api/llamada`; B5: Rate Limiting de Cloudflare para `/api/chat` y `/api/leads` | doc 14 | JP | — |
-| 10 | B4: revisar correo noreply en el Lenovo; `chat_id` como variable en n8n | doc 14 | JE | — |
-| 11 | API con llave por empresa — solo cuando haya un piloto | `JM_VENTAS.md` §6 | JE | — |
-| 12 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP; cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
+| 3 | Cabecera `Permissions-Policy` en la web (aviso menor de los analizadores) | 2026‑11‑26 | JE | — |
+| 4 | Borrar el lead de prueba #1; correo de JP para `09_lectura_jp.sh` (opcional) | Fase 2 | JE | — |
+| 5 | C6: ACL de Tailscale con `tag:centinela-run` + llave con tag + `TS_TAGS=… nube/05_desplegar.sh` | doc 15 §2.6 | JE | — |
+| 6 | B3: quitar el token por URL en `/api/llamada`; B5: Rate Limiting de Cloudflare para `/api/chat` y `/api/leads` | doc 14 | JP | — |
+| 7 | B4: revisar correo noreply en el Lenovo; `chat_id` como variable en n8n | doc 14 | JE | — |
+| 8 | API con llave por empresa — solo cuando haya un piloto | `JM_VENTAS.md` §6 | JE | — |
+| 9 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP; cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
 
 ## ▶️ Próxima sesión (empezar aquí)
 **Todo el sistema está en producción y JP está listo.** Falta para la expo del martes 2026‑12‑01 ([`18_EXPO.md`](18_EXPO.md)):
 1. **PC de mesa:** verificación final (`18_EXPO.md` §4: `auditar .`, Lighthouse, Observatory) y anotar resultados en doc 14.
 2. **Looker Studio** (`17_LOOKER_STUDIO.md` §5).
-3. **Ensayo** con JP y JM + grabar el failover; JP con la hora sincronizada.
 
 ## Notas de la última sesión
-- Sesión 2026‑11‑26 tarde: JP conectado y verificado (v1.8.0, Cloud SQL, secretos, 403 directo). Guía de la expo en `18_EXPO.md`. Doc 08 marcado como histórico.
+- Sesión 2026‑11‑26 tarde: JP conectado y verificado (v1.8.0, Cloud SQL, secretos, 403 directo). Guía de la expo en `18_EXPO.md`. Doc 08 marcado como histórico. JP confirmó la hora sincronizada. Sin ensayo formal (decisión de Juan).
 - Sesión 2026‑11‑26 (PC de mesa): merge de las Fases 4 y 5; gateway con la web corregida para celular; Vertex y BigQuery activados. En producción: JE v1.8.0 con IA híbrida y exportación diaria a BigQuery.
 - Sesión 2026‑11‑25 (PC de mesa): Fases 0‑3 cerradas y desplegadas (Vertex aún apagado); Fase 4 en PR #6.
 - Producción hoy: JE v1.8.0 (`centinela-je-00011`, Vertex + BigQuery + precio de Gemini), JP v1.8.0, gateway con pestañas Resumen/Arquitectura/Seguridad/Ventas/IA, migraciones 004 y 005 aplicadas.

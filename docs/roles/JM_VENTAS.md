@@ -5,7 +5,7 @@
 
 ## 1. El problema
 - En Colombia contestar un número desconocido es una apuesta: **falso banco** que pide el código del SMS, **wangiri** (llamada perdida internacional para que la devuelvas a tarifa premium), extorsión, cobranza y telemarketing no pedido.
-- El 71 % de los colombianos recibió al menos un intento de fraude en 2025 (DataCrédito Experian) [4]. La Policía registró 13.600 denuncias de fraude telefónico en 2024, 18 % más que en 2023 [3], y el vishing (fraude por voz) es el canal donde más personas pierden dinero según TransUnion [3].
+- El 71 % de los colombianos recibió al menos un intento de fraude en el último año, y entre ellos el 46 % dice que al menos uno se concretó (DataCrédito Experian, 2026) [4]. La Policía registró 13.600 denuncias de fraude telefónico en 2024, 18 % más que en 2023 [3], y el vishing (fraude por voz) es el canal donde más personas pierden dinero según TransUnion [3].
 - **Cada víctima lo sufre sola:** lo que aprende una persona no protege a la siguiente. Los bancos y cooperativas se enteran tarde de que los están suplantando.
 
 ## 2. La solución
@@ -16,7 +16,7 @@ Centinela convierte cada reporte en protección para todos: **puntaje de riesgo 
 | Dato | Cifra | Fuente |
 |---|---|---|
 | Líneas móviles activas | 92,5 millones (1T 2025), penetración 174 % | MinTIC [1] |
-| Intentos de fraude | 71 % de los colombianos recibió al menos uno en 2025 | DataCrédito Experian [4] |
+| Intentos de fraude | 71 % de los colombianos recibió al menos uno en el último año; el 46 % de ellos sufrió al menos una estafa | DataCrédito Experian, 2026 [4] |
 | Denuncias de fraude telefónico | 13.600 en 2024 (+18 %) | Policía Nacional, vía prensa [3] |
 | Industria BPO / contact center | ~750.000‑790.000 empleos formales, ~3 % del PIB | BPrO, Bancolombia [5][6] |
 | Cooperativas de ahorro y crédito | 172 entidades, > 4,4 millones de asociados (cierre 2024) | Fecolfin vía La República [7] |
@@ -109,7 +109,7 @@ Diferenciales:
 1. MinTIC, *Colombia cerró el primer trimestre de 2025 con más de 49 millones de accesos móviles a Internet* (incluye 92,5 M de líneas): https://mintic.gov.co/portal/inicio/Sala-de-prensa/Noticias/404518:Colombia-cerro-el-primer-trimestre-de-2025-con-mas-de-49-millones-de-accesos-moviles-a-Internet
 2. Portafolio, *Internet móvil en Colombia crece a 49,1 millones de accesos*: https://www.portafolio.co/tecnologia/negocios-empresas-internet-movil-en-colombia-crece-a-49-1-millones-de-accesos-en-el-primer-trimestre-637043
 3. El País Cali, *Cibercrimen en Colombia cierra 2025 con 13 mil casos*: https://www.elpais.com.co/colombia/cibercrimen-en-colombia-cierra-2025-con-13-mil-casos-alerta-por-modalidades-de-fraude-3146.html · La República, *Las estafas por correo, internet y llamadas cayeron 74 % en 2025* (TransUnion): https://www.larepublica.co/finanzas/las-estafas-por-correo-internet-y-llamadas-cayeron-74-en-2025-hasta-llegar-a-2-3-4402402
-4. Dato de DataCrédito Experian reportado en prensa en 2025; posible fuente: El Colombiano, *Phishing en Colombia*: https://www.elcolombiano.com/negocios/phishing-colombia-como-evitar-ser-victima-fraude-suplantacion-digital-KI28758323 — **⚠️ JM: confirmar el enlace exacto del 71 % antes de usarlo en la sustentación.**
+4. DataCrédito Experian, estudio *Del fraude digital a la confianza digital* (septiembre de 2026), reportado en La República: https://www.larepublica.co/finanzas/estudio-de-datacredito-experian-revelo-que-intento-de-fraude-llego-a-71-de-las-personas-en-el-ultimo-ano-4474135 y en Portafolio: https://www.portafolio.co/economia/finanzas/el-71-de-colombianos-enfrento-intentos-de-fraude-durante-el-ultimo-ano-y-46-reporto-una-estafa-consumada-501838 (verificado 2026‑11‑26). El 46 % es sobre los expuestos, no sobre todos los colombianos.
 5. Noticias RCN, *El BPO en Colombia: más de 750 mil empleos*: https://www.noticiasrcn.com/economia/call-center-bpo-tiene-mas-de-750-mil-empleos-en-colombia-891279
 6. Bancolombia, *Actualidad del sector de contact centers en Colombia: 3 % del PIB*: https://www.bancolombia.com/empresas/capital-inteligente/actualidad-economica-sectorial/evolucion-bpo-colombia
 7. La República, *Cifras del sistema financiero cooperativo 2024*: https://www.larepublica.co/finanzas/cifras-sistema-financiero-cooperativo-2024-4085157
