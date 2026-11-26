@@ -6,6 +6,10 @@
 set -euo pipefail
 PROYECTO="${PROYECTO:-$(gcloud config get-value project 2>/dev/null)}"
 [[ -n "$PROYECTO" ]] || { echo "❌ Primero: gcloud config set project ID_DEL_PROYECTO"; exit 1; }
+# Todos los gcloud de estos scripts usan ESTE proyecto, aunque el equipo tenga otro por defecto
+# (fuera de Cloud Shell: PROYECTO=centinela-xxxx bash nube/05_desplegar.sh).
+export CLOUDSDK_CORE_PROJECT="$PROYECTO"
+echo "Proyecto de Google Cloud: $PROYECTO"
 gcloud auth print-access-token >/dev/null 2>&1 || {
   echo "❌ La sesión de gcloud se cerró (Cloud Shell se reconectó). Corre:  gcloud auth login"; exit 1; }
 REGION=us-east1                 # misma región de la VM, del nivel gratis y cerca de Colombia

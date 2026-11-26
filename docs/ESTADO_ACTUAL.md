@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `feat/roles` (Fase 2)
+> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `chore/despliegue-fase2`
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -14,19 +14,14 @@
 | Auditoría de la migración (C1‑C5): Tailscale 1.104.7, puerta única, llave TS fuera del proceso, OIDC con caché, requests 2.33.0 | 2026‑11‑20 | JE |
 | Fase 0: diagnóstico del repo | 2026‑11‑25 | JE |
 | **Fase 1 · Cimientos** (PR #1, merge): `CLAUDE.md`, este tablero, 72 tests, CI (ruff, pytest, shellcheck, gitleaks, trivy) | 2026‑11‑25 | JE |
+| **Fase 2 · Roles e interfaces** (PR #2, merge) **desplegada**: migración `db/004` en Cloud SQL, JE v1.6.0 (revisión `centinela-je-00008`), gateway con pestañas Arquitectura / Seguridad / Ventas y web "Para empresas". Verificado: `/health` 1.6.0, `/api/interno` → 404 desde afuera, JE directo → 403, lead de prueba #1 guardado | 2026‑11‑25 | JE |
 
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| **Fase 2 · Roles e interfaces** (código listo, **sin desplegar**): docs `roles/JE_ARQUITECTURA.md`, `roles/JP_SEGURIDAD.md`, `roles/JM_VENTAS.md`; web "Para empresas" + formulario de leads; panel con pestañas Arquitectura / Seguridad / Ventas; API v1.6.0 (`/api/leads`, `/api/interno/*`, métricas 401/403/429 por hora); migración `db/004`; `nube/09_lectura_jp.sh`; `ataques.sh` con 3 pruebas nuevas; 86 tests | `feat/roles` | JE (+ JP y JM revisan su doc) |
-
-### Para desplegar la Fase 2 (en este orden, cada paso con "ok" de Juan)
-1. **Migración** (Cloud SQL Studio, usuario `centinela_app`, base `centinela`): pegar `db/004_leads_y_seguridad.sql` → Run. Sin costo.
-2. **JE** (Cloud Shell): `cd ~/surprised-system && git pull && bash nube/05_desplegar.sh` → nueva revisión v1.6.0. Sin costo adicional (nivel gratis).
-3. **Gateway** (PC): `cd gateway && npx wrangler deploy`. Requiere `CONTROL_TOKEN` en el Worker (ya existe: lo usa el botón "Detener JE"). Sin costo.
-4. **JP** (cuando haga lo del bloque 2): `sudo bash servidor/actualizar.sh` (la misma BD, no necesita migración).
-5. **Rol de lectura de JP** (Cloud Shell, correo de JP por privado): `CORREO_JP=… bash nube/09_lectura_jp.sh`. Sin costo.
-6. **Comprobar:** web → "Para empresas" → enviar un lead de prueba → panel → Ventas; panel → Seguridad (correr `bash servidor/ataques.sh` y esperar 1 min); panel → Arquitectura en verde.
+| Revisar el panel con login: pestañas Arquitectura, Seguridad (los 403 de la verificación aparecen tras el siguiente latido) y Ventas (borrar el lead #1 "PRUEBA despliegue") | — | JE |
+| Rol de solo lectura de JP: `PROYECTO=ID_DEL_PROYECTO CORREO_JP=… bash nube/09_lectura_jp.sh` | — | JE (correo de JP por privado) |
+| JP actualiza su nodo a v1.6.0 cuando haga el bloque 2 (`sudo bash servidor/actualizar.sh`) | — | JP |
 
 ## Pendiente ⏳
 | # | Qué | Origen | Responsable | Bloquea |
@@ -47,6 +42,9 @@
 | 14 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP (`nube/09_lectura_jp.sh quitar`); cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
 
 ## Notas de la última sesión
+- **Proyecto de Google Cloud:** el de nombre `centinela` (`gcloud projects list`; el ID no se sube al repo). Fuera de Cloud Shell los scripts se corren con `PROYECTO=ID_DEL_PROYECTO bash nube/…`; `config.sh` exporta `CLOUDSDK_CORE_PROJECT` para que ningún `gcloud` caiga en el proyecto por defecto del equipo (en el PC de mesa es otro proyecto).
+- Migraciones nuevas: `PROYECTO=ID_DEL_PROYECTO bash nube/10_migracion.sh db/NNN_….sql` (Auth Proxy + psql, clave desde Secret Manager sin imprimirla).
+- Permisos de Claude Code para desplegar: `.claude/settings.local.json` (local, no se sube), solo para estos scripts y `npx wrangler deploy`.
 - Las métricas de seguridad se cuentan en memoria y se vuelcan en cada latido (nunca una escritura por petición). Si la migración 004 no está aplicada, JE solo registra un aviso en el log y conserva los conteos.
 - `/api/interno/*` exige `GATEWAY_SECRET` **y** `CONTROL_TOKEN`; desde afuera del Worker responde 404.
 - El aviso de Telegram de un lead nuevo no lleva datos personales (solo empresa, segmento y plan).
