@@ -341,6 +341,11 @@ h3 { font-size: 18px; font-weight: 700; }
   .menu:popover-open a { padding: 10px 12px; border-radius: 8px; font-size: 16px; }
   .menu:popover-open a:hover { background: var(--cobalto-suave); }
   .pulso { margin-left: auto; }
+  /* Celular: marca y botón de menú fijos; la píldora de estado cede espacio y recorta su texto */
+  .barra { gap: 10px; }
+  .marca, .menu-nav { flex: none; }
+  .pulso { min-width: 0; flex: 0 1 auto; padding: 5px 10px; font-size: 13px; }
+  #pulso-txt { overflow: hidden; text-overflow: ellipsis; }
   .nodos { grid-template-columns: 1fr; }
   .consejos { grid-template-columns: 1fr; }
   .diagrama { grid-template-columns: 1fr; gap: 10px; }
@@ -479,3 +484,8 @@ html[data-tema="claro"] { color-scheme: light; --papel: #EEF1F6; --superficie: #
 .acepto { display: flex; gap: 10px; align-items: flex-start; color: var(--gris); font-size: 14px; max-width: 760px; }
 .acepto input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
 .trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+@media (max-width: 380px) {
+  .marca { font-size: 18px; gap: 8px; }
+  .marca svg { width: 24px; height: 24px; }
+}
