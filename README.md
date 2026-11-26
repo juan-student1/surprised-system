@@ -84,7 +84,7 @@ Reglas del repo (público, sin secretos; confirmación antes de tocar la nube; u
 | Tema | Documento |
 |---|---|
 | **Estado del proyecto (empezar aquí)** | [`docs/ESTADO_ACTUAL.md`](docs/ESTADO_ACTUAL.md) |
-| Pitch y guion de sustentación | [`docs/13_PITCH.md`](docs/13_PITCH.md) |
+| Pitch y guion de sustentación | [`docs/13_PITCH.md`](docs/13_PITCH.md) · checklist de la expo [`docs/18_EXPO.md`](docs/18_EXPO.md) |
 | Arquitectura en la nube (Cloud Run, Cloud SQL, IAM) | [`docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md`](docs/15_CLOUD_RUN_CLOUD_SQL_IAM.md) |
 | IA híbrida (Ollama + Vertex AI Gemini) | [`docs/16_VERTEX_AI.md`](docs/16_VERTEX_AI.md) |
 | Analítica (BigQuery + Looker Studio) | [`docs/17_LOOKER_STUDIO.md`](docs/17_LOOKER_STUDIO.md) |

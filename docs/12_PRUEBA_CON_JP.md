@@ -1,7 +1,7 @@
-# 12 · Lo que falta para probar con JP (failover completo)
+# 12 · Nodo JP y prueba de failover
 
-> Todo lo de **nuestro lado** (Lenovo, gateway, JE en Cloud Run, código) ya está hecho. Esto es lo único pendiente:
-> 1) conectar JP a Cloud SQL (`nube/07_llave_jp.sh` + `servidor/conectar_cloudsql.sh`, doc 15 §3), 2) dejar JP igual que JE, 3) probar juntos.
+> **Estado 2026‑11‑26: JP listo** (v1.8.0, Cloud SQL por el Auth Proxy, `GATEWAY_SECRET`/`BOT_SECRET`/`LLAMADAS_TOKEN` con huellas iguales a JE, acceso directo → 403). El failover ya se probó con JP.
+> Esta guía queda para rehacerlo: 1) conectar JP a Cloud SQL (`nube/07_llave_jp.sh` + `servidor/conectar_cloudsql.sh`, doc 15 §3), 2) dejar JP igual que JE, 3) probar juntos.
 
 ## Qué se arregló (2026‑11‑17)
 | Problema | Causa | Arreglo |
@@ -40,12 +40,9 @@ Los dos últimos (auditoría, bloque 2) se ponen **sin que se vean** con el bloq
 
 **Comprobar que los secretos coinciden sin mostrarlos** (en JE y en JP deben salir iguales):
 ```bash
-for k in LLAMADAS_TOKEN GATEWAY_SECRET BOT_SECRET; do printf '%s ' $k; sudo grep "^$k=" /opt/centinela/.env | sha256sum | cut -c1-12; done
+for k in GATEWAY_SECRET BOT_SECRET LLAMADAS_TOKEN; do printf '%s ' $k; sudo grep "^$k=" /opt/centinela/.env | cut -d= -f2- | tr -d '\n' | sha256sum | cut -c1-12; done
 ```
-**Comprobar que la clave del celular es la misma sin mostrarla** (correr en JE y en JP, deben salir iguales):
-```bash
-sudo grep '^LLAMADAS_TOKEN=' /opt/centinela/.env | sha256sum | cut -c1-12
-```
+La huella es solo del **valor** (sin `NOMBRE=` ni salto de línea), igual a la de Secret Manager para JE. Juan tiene las tres huellas esperadas; no se suben al repo aunque no revelen el secreto.
 Y que JP esté publicado: `sudo tailscale funnel status` debe mostrar `https://centinela-jp.tailaf5c0b.ts.net` → `127.0.0.1:8000`.
 
 ## 3 · Prueba juntos (5 min)
@@ -59,5 +56,7 @@ Y que JP esté publicado: `sudo tailscale funnel status` debe mostrar `https://c
 | Síntoma | Revisa |
 |---|---|
 | Celular: `HTTP 401 … Token invalido` con JP | La `LLAMADAS_TOKEN` de JP no es la de JE (comparar con el `sha256sum` de arriba) |
+| JP `"db":false` y en `journalctl -u cloudsql-proxy`: **`tls: bad certificate`** | **La hora de la VM está corrida** (pasa al despertar de una suspensión del Mac): Cloud SQL rechaza el certificado temporal del proxy. `timedatectl` → `System clock synchronized: no`. Arreglo: `sudo apt install -y systemd-timesyncd && sudo timedatectl set-ntp true`, luego `sudo systemctl restart cloudsql-proxy centinela` (visto el 2026‑11‑26). Apagar la VM con `sudo poweroff`, no suspenderla |
+| JP `"db":false` y en el log de `centinela`: `password authentication failed` | La clave de `centinela_jp` quedó mal: repetir `servidor/conectar_cloudsql.sh` |
 | `/gateway/estado` → JP `online:false` | En JP: `systemctl status centinela`, `sudo tailscale funnel status` |
 | La llamada no sale en la web pero el celular sí avisa | `curl -s https://centinela.juan-gallego-sec.workers.dev/api/llamadas?limite=1` debe mostrar la llamada con `"nodo":"JP"` |

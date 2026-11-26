@@ -1,5 +1,7 @@
 # 08 · Checklist final: cuando JP esté listo + sustentación
 
+> ⚠️ **Histórico (era de las VM y Supabase).** Para la exposición usar [`18_EXPO.md`](18_EXPO.md) y [`13_PITCH.md`](13_PITCH.md).
+
 ## A · Integrar a JP (15 min, cuando su laptop diga "NODO JP LISTO")
 - [ ] JP manda foto de `curl -s localhost:8000/health` con `"db":true`.
 - [ ] Juan, desde su PC: `tailscale ping centinela-jp` responde.
