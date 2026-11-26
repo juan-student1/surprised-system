@@ -144,7 +144,7 @@ SELECT * FROM UNNEST([
   STRUCT('Secret Manager', 'Google Cloud', 0.6, '~10 secretos activos'),
   STRUCT('Artifact Registry + Cloud Build', 'Google Cloud', 0.2, 'Imágenes de cada despliegue'),
   STRUCT('BigQuery (analítica)', 'Google Cloud', 0.0, 'KB de datos: dentro de 10 GiB y 1 TiB de consultas gratis'),
-  STRUCT('Vertex AI Gemini (respaldo)', 'Google Cloud', 0.5, 'Uso real en v_ia_diaria; topes 20/h y 100/día'),
+  STRUCT('Vertex AI Gemini (respaldo)', 'Google Cloud', 0.8, 'Uso normal; costo real en v_ia_diaria (0,75/3,75 USD por M tokens); peor caso ~20 USD con topes 20/h y 100/día'),
   STRUCT('Cloudflare Workers', 'Cloudflare', 0.0, 'Plan gratis'),
   STRUCT('Tailscale, Telegram, n8n', 'Otros', 0.0, 'Planes gratis / autohospedado')
 ]);

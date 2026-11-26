@@ -138,7 +138,7 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 | Lenovo (IA) y VM de JP | equipos propios | electricidad |
 | **Total nube** | | **≈ 10‑12 USD/mes** (del crédito de 300 USD) |
 
-**Vertex AI Gemini (Fase 3):** centavos en uso normal; peor caso acotado por los topes (orden de 10‑20 USD/mes, ver `16_VERTEX_AI.md` §4).
+**Vertex AI Gemini (Fase 3):** ≈ 0,80 USD/mes en uso normal; peor caso ≈ 20 USD/mes acotado por los topes (0,75 / 3,75 USD por millón de tokens, ver `16_VERTEX_AI.md` §4).
 **BigQuery + Looker Studio (Fase 4):** 0 (ver `17_LOOKER_STUDIO.md` §3). Detalle previo: BigQuery dentro del nivel gratis (10 GB de almacenamiento y 1 TB de consultas al mes) y un segundo trabajo de Scheduler (Fase 4).
 
 ## 4. Qué mostrar en la sustentación (JE)

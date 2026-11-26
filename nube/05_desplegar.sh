@@ -22,6 +22,8 @@ existe_secreto centinela-ts-authkey && VARS+="|OLLAMA_PROXY=http://localhost:105
 # Vertex AI (Gemini) de respaldo: solo si la API está habilitada (nube/11_vertex.sh dar). Topes en config.py.
 if gcloud services list --enabled --filter="config.name=aiplatform.googleapis.com" --format="value(config.name)" 2>/dev/null | grep -q aiplatform; then
   VARS+="|VERTEX_PROYECTO=$PROYECTO|VERTEX_REGION=${VERTEX_REGION:-global}|VERTEX_MODELO=${VERTEX_MODELO:-gemini-3.8-flash}"
+  # Precio por millón de tokens de gemini-3.8-flash (consola de Vertex, 2026-11-26) → costo estimado en la analítica
+  VARS+="|VERTEX_PRECIO_ENTRADA_M=${VERTEX_PRECIO_ENTRADA_M:-0.75}|VERTEX_PRECIO_SALIDA_M=${VERTEX_PRECIO_SALIDA_M:-3.75}"
   echo "Vertex AI: encendido (${VERTEX_MODELO:-gemini-3.8-flash}, ${VERTEX_REGION:-global})"
 else
   echo "Vertex AI: apagado (la API no está habilitada; ver nube/11_vertex.sh)"

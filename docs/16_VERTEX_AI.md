@@ -40,16 +40,14 @@
 
 ## 4. Costo
 
-> ⚠️ **El precio por token de `gemini-3.8-flash` no se pudo leer de la página oficial de precios** (no cargó al consultarla). **Antes de encender Vertex, JE lo revisa en la consola → Vertex AI → Model Garden → Gemini 3.8 Flash → Pricing** y lo anota aquí.
+**Precio de `gemini-3.8-flash`** (consola de Vertex AI, revisado por JE el 2026‑11‑26): **0,75 USD por millón de tokens de entrada** y **3,75 USD por millón de tokens de salida**. JE lo recibe en `VERTEX_PRECIO_ENTRADA_M` / `VERTEX_PRECIO_SALIDA_M` (lo pone `nube/05_desplegar.sh`) y así la tabla `uso_ia` y la vista `v_ia_diaria` muestran el **costo estimado real**.
 
-Los topes acotan la factura sin importar el precio exacto:
+| Escenario | Llamadas/mes | Tokens aprox. por llamada | Tokens/mes (entrada / salida) | Costo |
+|---|---|---|---|---|
+| Normal (el Lenovo casi siempre prendido) | ~300 | 1.500 / 400 | 0,45 M / 0,12 M | **≈ 0,80 USD/mes** |
+| Peor caso (Lenovo apagado todo el mes y los topes llenos) | 3.000 chat + 300 profundos | 1.500 / 1.000 (chat), 8.000 / 3.000 (profundo) | 6,9 M / 3,9 M | **≈ 20 USD/mes** (5,2 entrada + 14,6 salida) |
 
-| Escenario | Llamadas/mes | Tokens aprox. por llamada | Tokens/mes |
-|---|---|---|---|
-| Normal (el Lenovo casi siempre prendido) | < 300 | 1.500 entrada / 400 salida | ~0,5 M |
-| Peor caso (Lenovo apagado todo el mes y el tope diario lleno) | 100 × 30 = 3.000 + 300 profundos | 1.500 / 1.000 (chat), 8.000 / 3.000 (profundo) | ~7 M entrada / ~4 M salida |
-
-Con precios del rango de los modelos Flash (del orden de décimas de USD por millón de tokens de entrada y de unos pocos USD por millón de salida), el **peor caso queda en el orden de 10‑20 USD/mes** y el uso normal en centavos. La **alerta de presupuesto de 15 USD** (doc 15 §6) sigue siendo la red de seguridad.
+El peor caso supera la alerta de presupuesto de 15 USD (doc 15 §6), que **avisaría a tiempo**. Si se quiere un techo más bajo, basta bajar `VERTEX_MAX_DIA` (con 50/día el peor caso queda en ≈ 10 USD/mes) y redesplegar.
 
 ## 5. Activar (en orden, con confirmación de Juan)
 
