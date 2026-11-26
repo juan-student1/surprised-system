@@ -17,3 +17,5 @@ android/**/captures/
 # APK para descargar en web (se sube a Cloudflare, no a GitHub)
 web/app.apk
 android/**/.kotlin/
+# Configuración local de Claude Code (permisos de este equipo)
+.claude/settings.local.json
