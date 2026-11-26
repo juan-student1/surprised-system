@@ -188,7 +188,7 @@
   <section class="seccion cluster-sec" id="cluster">
     <div class="seccion-cab">
       <h2>El clúster, en vivo</h2>
-      <p>Centinela corre en dos nodos: el principal en una VM de Google Cloud y el respaldo en la VM de JP, unidos por Tailscale. Si el principal se apaga, el de respaldo atiende en segundos y nadie lo nota.</p>
+      <p>Centinela corre en dos nodos sobre la misma base de datos: el principal en Google Cloud Run y el respaldo en la VM de JP. Si el principal se apaga, el de respaldo atiende en menos de un segundo y nadie lo nota.</p>
     </div>
 
     <div class="aviso-failover" id="aviso-failover" hidden></div>
@@ -196,7 +196,7 @@
     <div class="nodos">
       <article class="nodo" id="nodo-JE" data-estado="cargando">
         <header>
-          <h3>JE <small>principal · VM e2-micro en Google Cloud</small></h3>
+          <h3>JE <small>principal · Google Cloud Run</small></h3>
           <span class="estado">—</span>
         </header>
         <svg class="ecg" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 H110 l8 -18 l10 36 l8 -26 l6 8 H300"/></svg>
@@ -234,8 +234,8 @@
         <div class="flecha" aria-hidden="true"></div>
         <div class="paso" id="diag-nodo"><b>JE / JP</b><span>API Centinela</span></div>
         <div class="flecha" aria-hidden="true"></div>
-        <div class="paso"><b>Supabase</b><span>base de datos</span></div>
-        <div class="paso ia" id="diag-ia"><b>IA local</b><span>Ollama · Lenovo de JE</span></div>
+        <div class="paso"><b>Cloud SQL</b><span>base de datos · Google Cloud</span></div>
+        <div class="paso ia" id="diag-ia"><b>IA híbrida</b><span>Ollama local · respaldo Gemini</span></div>
       </figure>
       <div class="bitacora">
         <h3>Bitácora del clúster</h3>

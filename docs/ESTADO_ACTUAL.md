@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `feat/analitica` (Fase 4)
+> Última actualización: **2026‑11‑26** · equipo: PC de mesa · rama: `feat/pulir-y-vender` (Fase 5)
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -13,26 +13,18 @@
 | Auditoría bloque 2 en JE y gateway: `GATEWAY_SECRET` + `BOT_SECRET` (H1, M1) | 2026‑11‑17 | JE |
 | Auditoría de la migración (C1‑C5): Tailscale 1.104.7, puerta única, llave TS fuera del proceso, OIDC con caché, requests 2.33.0 | 2026‑11‑20 | JE |
 | Fase 0: diagnóstico del repo | 2026‑11‑25 | JE |
+| **Fase 4 · Analítica** (PR #6, merge 2026‑11‑26): exportación a BigQuery, 8 tablas, 10 vistas, guía de Looker; pendiente de activar en la nube | 2026‑11‑26 | JE |
 | **Fase 1 · Cimientos** (PR #1, merge): `CLAUDE.md`, este tablero, 72 tests, CI (ruff, pytest, shellcheck, gitleaks, trivy) | 2026‑11‑25 | JE |
 | **Fase 2 · Roles e interfaces** (PR #2, merge) **desplegada**: migración `db/004` en Cloud SQL, JE v1.6.0 (revisión `centinela-je-00008`), gateway con pestañas Arquitectura / Seguridad / Ventas y web "Para empresas". Verificado: `/health` 1.6.0, `/api/interno` → 404 desde afuera, JE directo → 403, lead de prueba #1 guardado | 2026‑11‑25 | JE |
 
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| **Fase 4 · Analítica** (código listo, **sin crear nada en la nube**): exportación diaria agregada y anonimizada a BigQuery (`/tareas/exportar`, OIDC, *load jobs* `WRITE_TRUNCATE`), 8 tablas, 10 vistas (`analitica/vistas.sql`), `nube/12_bigquery.sh`, guía `docs/17_LOOKER_STUDIO.md` con las 7 páginas y sus textos; API v1.8.0; 122 tests; SQL probado contra Postgres local. Costo revisado: 0 (nivel gratis; Scheduler queda en 2 de 3 trabajos gratis) | `feat/analitica` | JE |
-| **Fase 3 · IA híbrida** (PR #4, merge; **desplegada con Vertex apagado**: migración `db/005` ✅, JE v1.7.0 revisión `centinela-je-00009` ✅, gateway con pestaña IA ✅; chat verificado por Ollama). **Falta encender Vertex** (pasos 0, 2, 3 y 4 de abajo, los corre Juan): Ollama → Vertex AI Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas; topes 20/h, 100/día, 10 análisis profundos/día; caché 1 h; timeout 20 s; análisis profundo a demanda (campañas 72 h, resumen semanal) desde la pestaña **IA** del panel; API v1.7.0; migración `db/005`; `nube/11_vertex.sh`; doc 16; 104 tests | `feat/vertex-ia` | JE |
-| Revisar el panel con login (Arquitectura, Seguridad, Ventas) y borrar el lead de prueba #1 (`delete from leads where id = 1;`) | — | JE |
-| Rol de solo lectura de JP: `PROYECTO=ID_DEL_PROYECTO CORREO_JP=… bash nube/09_lectura_jp.sh` | — | JE (correo de JP por privado) |
-| JP actualiza su nodo cuando haga el bloque 2 (`sudo bash servidor/actualizar.sh`); JP corre sin Vertex | — | JP |
-
-### Para activar la Fase 3 (en orden, cada paso con "ok" de Juan)
-0. **Precio:** consola → Vertex AI → Model Garden → Gemini 3.8 Flash → anotar el precio en `docs/16_VERTEX_AI.md` §4 (no se pudo leer de la documentación pública).
-1. ~~`bash nube/10_migracion.sh db/005_ia_uso.sql`~~ ✅ aplicada.
-2. `bash nube/11_vertex.sh dar` — habilita la API de Vertex AI y da `roles/aiplatform.user` a `centinela-run`. Sin costo por sí solo.
-3. `bash nube/11_vertex.sh probar` — una llamada mínima (centavos) para confirmar modelo y región.
-4. `bash nube/05_desplegar.sh` — redespliega JE: al ver la API habilitada enciende Vertex (`/health` → `"vertex":true`).
-5. ~~`cd gateway && npx wrangler deploy`~~ ✅ desplegado.
-6. Comprobar: apagar Ollama → chat con `"fuente":"vertex"` → contador en la pestaña IA.
+| **Fase 5 · Pulir y vender:** auditoría final (gitleaks 0, semgrep 2 falsos positivos conocidos, trivy 0; doc 14), web móvil (encabezado se desbordaba a 390 px y ocultaba el menú → corregido; textos del clúster actualizados a Cloud Run/Cloud SQL/IA híbrida), README como producto, `13_PITCH.md` y guion de sustentación (JE arquitectura · JP seguridad · JM ventas), doc 12 al día | `feat/pulir-y-vender` | JE (+ JP y JM ensayan su parte) |
+| Fase 4 mergeada (PR #6) **sin activar** en la nube: falta `12_bigquery.sh preparar` → `05_desplegar.sh` → `programar` → `vistas` y el panel de Looker | — | Juan corre los `!` |
+| Fase 3: Vertex sigue apagado (falta `11_vertex.sh dar` y `probar`, tras revisar el precio) | — | Juan |
+| Borrar el lead de prueba #1; revisar las pestañas del panel con su usuario; correo de JP para `09_lectura_jp.sh` | — | JE |
+| JP: bloque 2 + Cloud SQL + actualizar su nodo; prueba de failover real | — | JP |
 
 ### Para activar la Fase 4 (en orden, cada paso con "ok" de Juan)
 1. `bash nube/12_bigquery.sh preparar` — dataset `centinela_analitica` (us-east1) + `bigquery.dataEditor` solo en el dataset y `bigquery.jobUser` para `centinela-run`.
@@ -60,13 +52,9 @@
 | 14 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP (`nube/09_lectura_jp.sh quitar`); cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
 
 ## ▶️ Próxima sesión (empezar aquí)
-1. `git checkout main && git pull` y revisar el **PR #6** (Fase 4, CI en verde, sin merge todavía).
-2. Si se da el "ok": merge del PR #6 y activar en este orden (Juan corre los `!`):
-   - Vertex (Fase 3, opcional; antes revisar el precio de Gemini 3.8 Flash en la consola): `nube/11_vertex.sh dar` → `probar`.
-   - BigQuery (Fase 4): `nube/12_bigquery.sh preparar` → `nube/05_desplegar.sh` (enciende Vertex y la exportación a la vez) → `12_bigquery.sh programar` → `12_bigquery.sh vistas`.
-   - Armar el panel en Looker Studio (`docs/17_LOOKER_STUDIO.md` §5).
-3. Pendientes de Juan: borrar el lead de prueba #1, revisar las pestañas del panel con su usuario, correo de JP para `09_lectura_jp.sh`.
-4. Luego: **Fase 5 · Pulir y vender** (auditoría gitleaks/semgrep/trivy, web móvil/PWA, README como producto, `13_PITCH.md` y guion de sustentación JE/JP/JM).
+1. `git checkout main && git pull`; revisar el PR de la **Fase 5** (`feat/pulir-y-vender`) y, con "ok", merge + `cd gateway && npx wrangler deploy` (publica la web corregida para celular).
+2. Activar en la nube (Juan corre los `!`, en orden): Vertex `11_vertex.sh dar` → `probar` (opcional, tras revisar el precio); BigQuery `12_bigquery.sh preparar` → `05_desplegar.sh` → `12_bigquery.sh programar` → `vistas`; panel de Looker (`17_LOOKER_STUDIO.md` §5).
+3. Ensayo de la sustentación con `13_PITCH.md` (JE · JP · JM) y prueba de failover real con JP.
 
 ## Notas de la última sesión
 - Sesión 2026‑11‑25 (PC de mesa): Fases 0‑3 cerradas y desplegadas (Vertex aún apagado); Fase 4 en PR #6.

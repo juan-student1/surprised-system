@@ -102,3 +102,17 @@ Después de los bloques 1 y 2: `sudo bash servidor/actualizar.sh` en su VM y pon
 ## Auditoría de la migración a Cloud Run (2026‑11‑20)
 Ver `15_CLOUD_RUN_CLOUD_SQL_IAM.md` §2.6: 6 hallazgos (1 crítico por dependencias de la imagen de Tailscale, 3 medios, 2 bajos), 5 corregidos en código y 1 (ACL de Tailscale) documentado para hacerlo en el panel.
 
+
+## Revisión final (Fase 5 · 2026‑11‑26)
+Sobre `main` en `74c3076` (API v1.8.0, gateway con pestañas, IA híbrida, exportación a BigQuery):
+
+| Herramienta | Alcance | Resultado |
+|---|---|---|
+| `gitleaks git .` | Todo el historial | **0 secretos** |
+| `semgrep --config auto` | Todo el repo (sin `node_modules` ni `vendor`) | 2 avisos, ambos **falsos positivos ya conocidos**: favicon `data:` sin `integrity` (no hay recurso externo) y actividad principal de Android exportada (obligatorio para el lanzador) |
+| `trivy fs` (vuln, secret, misconfig; HIGH/CRITICAL) | `requirements.txt`, `Dockerfile` | **0** |
+| CI (`.github/workflows/ci.yml`) | Cada PR: ruff, 122 tests, shellcheck, gitleaks, trivy | ✅ en verde |
+
+Nuevo desde la auditoría anterior y revisado: rutas `/api/interno/*` (secreto del gateway **y** token de control; 404 desde afuera), `/tareas/exportar` (mismo OIDC del latido), formulario de leads (trampa para bots, 3/hora, Ley 1581, aviso a Telegram sin datos personales), IA híbrida (topes, caché, timeout, anonimización hacia Gemini) y exportación a BigQuery (sin IPs, hashes, descripciones, leads ni números completos; verificado contra Postgres local).
+
+Siguen abiertos (sin cambio): H1/M1 en JP, B3 (token por URL), B5 (Rate Limiting de Cloudflare), C6 (ACL de Tailscale). Ver `roles/JP_SEGURIDAD.md` §2.
