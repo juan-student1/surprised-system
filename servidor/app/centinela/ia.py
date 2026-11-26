@@ -49,7 +49,6 @@ _llamadas: deque = deque()            # instantes de cada llamada real a Gemini 
 _profundas: deque = deque()           # instantes de los análisis profundos (últimas 24 h)
 _cache: dict[str, tuple[float, str]] = {}
 _CACHE_MAX = 300
-_cred = {"c": None}
 
 def _url_vertex() -> str:
     host = "aiplatform.googleapis.com" if VERTEX_REGION == "global" else f"{VERTEX_REGION}-aiplatform.googleapis.com"
@@ -58,14 +57,8 @@ def _url_vertex() -> str:
 
 def _token() -> str:
     """Token de la cuenta de servicio del nodo (en Cloud Run: centinela-run, sin llaves JSON)."""
-    import google.auth
-    from google.auth.transport.requests import Request
-    with _lock:
-        if _cred["c"] is None:
-            _cred["c"], _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        if not _cred["c"].valid:
-            _cred["c"].refresh(Request())
-        return _cred["c"].token
+    from .gcp import token
+    return token()
 
 def _podar(cola: deque, ahora: float):
     while cola and ahora - cola[0] > 86400: cola.popleft()

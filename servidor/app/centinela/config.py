@@ -9,7 +9,8 @@ import logging
 import os
 from datetime import datetime, timezone
 
-VERSION = "1.7.0"
+VERSION = "1.8.0"
+# v1.8.0 = exportación diaria agregada y anonimizada a BigQuery (/tareas/exportar, OIDC).
 # v1.7.0 = IA híbrida: Ollama primero, Vertex AI Gemini de respaldo con topes, y análisis profundo a demanda.
 # v1.6.0 = formulario de leads (/api/leads), métricas de seguridad por hora y rutas internas del panel (/api/interno/*).
 # v1.5.0 = puede correr en Cloud Run (tareas por Cloud Scheduler + IA por proxy de Tailscale) con Cloud SQL.
@@ -59,6 +60,14 @@ VERTEX_MAX_DIA = int(os.getenv("VERTEX_MAX_DIA", "100"))               # tope po
 VERTEX_MAX_PROFUNDO_DIA = int(os.getenv("VERTEX_MAX_PROFUNDO_DIA", "10"))  # análisis profundos por día
 VERTEX_TIMEOUT = float(os.getenv("VERTEX_TIMEOUT", "20"))              # segundos por llamada normal
 VERTEX_CACHE_SEG = int(os.getenv("VERTEX_CACHE_SEG", "3600"))          # misma pregunta = misma respuesta 1 h
+# Precio por millón de tokens (USD) para estimar costos en la analítica; vacío = sin estimar (docs/16 §4)
+VERTEX_PRECIO_ENTRADA_M = float(os.getenv("VERTEX_PRECIO_ENTRADA_M", "0") or 0)
+VERTEX_PRECIO_SALIDA_M = float(os.getenv("VERTEX_PRECIO_SALIDA_M", "0") or 0)
+# Analítica (Fase 4): exportación diaria AGREGADA y ANONIMIZADA a BigQuery (docs/17_LOOKER_STUDIO.md)
+BQ_PROYECTO = os.getenv("BQ_PROYECTO", "")             # vacío = exportación apagada (JP no exporta)
+BQ_DATASET = os.getenv("BQ_DATASET", "centinela_analitica")
+BQ_HISTORIA_DIAS = int(os.getenv("BQ_HISTORIA_DIAS", "400"))
+BQ_UBICACION = os.getenv("BQ_UBICACION", "us-east1")   # misma región que Cloud SQL y Cloud Run
 POOL_MIN = int(os.getenv("POOL_MIN", "0" if ES_NEON else "1"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 LIMITE_GLOBAL = int(os.getenv("LIMITE_GLOBAL", "150"))  # peticiones/min por IP a este nodo

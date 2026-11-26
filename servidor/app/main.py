@@ -74,17 +74,17 @@ async def _guardia(request: Request, call_next):
     ruta = request.url.path
     # Modo mantenimiento: el panel puede "detener" este nodo para demostrar el failover.
     # Devuelve 503 en todo (menos /api/control, para poder reactivarlo) -> el gateway salta al otro nodo.
-    if MANTENIMIENTO["on"] and ruta not in ("/api/control", "/tareas/latido"):
+    if MANTENIMIENTO["on"] and ruta != "/api/control" and not ruta.startswith("/tareas/"):
         r = Response('{"error":"Nodo en mantenimiento","nodo":"' + NODO + '"}', status_code=503, media_type="application/json")
         r.headers["X-Centinela-Nodo"] = NODO
         return r
     # Puerta única: con GATEWAY_SECRET, lo que no venga del Worker se rechaza (la URL de Cloud Run y la del
-    # Funnel son públicas). Excepciones: salud (la usa el gateway), latido (token OIDC) y control (token propio).
-    if not viene_del_gateway(request) and ruta not in ("/health", "/ping", "/", "/tareas/latido", "/api/control"):
+    # Funnel son públicas). Excepciones: salud (la usa el gateway), /tareas/* (token OIDC) y control (token propio).
+    if not viene_del_gateway(request) and ruta not in ("/health", "/ping", "/", "/api/control") and not ruta.startswith("/tareas/"):
         return Response('{"error":"Acceso solo por el gateway"}', status_code=403, media_type="application/json")
     # Escudo por IP en el propio nodo: si el gateway cae o atacan por el Funnel directo,
     # ninguna IP puede inundar la API. /health, /ping y / quedan libres (los usa el clúster).
-    if ruta not in ("/health", "/ping", "/", "/tareas/latido"):
+    if ruta not in ("/health", "/ping", "/") and not ruta.startswith("/tareas/"):
         if _exceso("global", ip_cliente(request), LIMITE_GLOBAL, 60):
             r = Response('{"error":"Demasiadas peticiones"}', status_code=429, media_type="application/json")
             r.headers["Retry-After"] = "60"

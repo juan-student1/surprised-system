@@ -5,11 +5,12 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, TAREAS_SA, TAREAS_AUDIENCIA, log
+from .config import NODO, ROL, VERSION, INICIO, CAT_TXT, EMOJI, LLAMADAS_TOKEN, CONTROL_TOKEN, BOT_SECRET, MANTENIMIENTO, CONSEJOS, TAREAS_SA, TAREAS_AUDIENCIA, BQ_PROYECTO, log
 from .db import q, local, db_ok, ficha, stats_completas, top_numeros, recientes_reportes, cluster_data, evento
 from .utilidades import normalizar, ip_cliente, metricas, formato, enmascarar, texto_ficha, hash_reportero
 from .ia import ollama_disponible, ia_disponible, ia_generar, vertex_cupo, SinIA, VERTEX_ACTIVO
 from .analisis import analisis_profundo, TIPOS as TIPOS_ANALISIS
+from .exportar import exportar as exportar_bq, resumen_por_tabla
 from .servicios import registrar_reporte, telegram_enviar, tareas_programadas, _exceso
 from . import auth as authmod
 
@@ -176,11 +177,9 @@ def registrar(app: FastAPI):
         with local() as c: pend = c.execute("select count(*) n from pendientes").fetchone()["n"]
         return {"ok": True, "nodo": NODO, "rol": ROL, "version": VERSION, "db": db_ok(), "ollama": ollama_disponible(), "vertex": VERTEX_ACTIVO, "pendientes": pend, "uptime_seg": int((datetime.now(timezone.utc) - INICIO).total_seconds()), **metricas()}
 
-    @app.post("/tareas/latido")
-    def tareas(request: Request):
-        # Solo Cloud Scheduler: trae un token OIDC firmado por Google para la cuenta de servicio
-        # centinela-tareas. Se verifica la firma, la audiencia y el correo (IAM, no una clave compartida).
-        if not TAREAS_SA: raise HTTPException(404, "No encontrado")
+    def _verificar_oidc(request: Request):
+        """Solo Cloud Scheduler: token OIDC firmado por Google para la cuenta centinela-tareas.
+        Se verifica la firma, la audiencia y el correo (IAM, no una clave compartida)."""
         token = (request.headers.get("authorization") or "").removeprefix("Bearer ").strip()
         if token.count(".") != 2 or len(token) > 4096: raise HTTPException(401, "No autorizado")  # ni siquiera parece un JWT
         try:
@@ -190,7 +189,25 @@ def registrar(app: FastAPI):
             raise HTTPException(401, "No autorizado")
         if info.get("email") != TAREAS_SA or not info.get("email_verified"):
             raise HTTPException(403, "Cuenta no permitida")
+
+    @app.post("/tareas/latido")
+    def tareas(request: Request):
+        if not TAREAS_SA: raise HTTPException(404, "No encontrado")
+        _verificar_oidc(request)
         return {"ok": True, "nodo": NODO, **tareas_programadas()}
+
+    @app.post("/tareas/exportar")
+    def tarea_exportar(request: Request):
+        # Exportación diaria AGREGADA y ANONIMIZADA a BigQuery (Fase 4). Mismo OIDC que el latido.
+        if not TAREAS_SA or not BQ_PROYECTO: raise HTTPException(404, "No encontrado")
+        _verificar_oidc(request)
+        try: res = exportar_bq()
+        except Exception as e:
+            log.warning("Exportación a BigQuery falló: %s", str(e)[:300]); raise HTTPException(500, "Exportación fallida")
+        try: evento("exportacion", f"BigQuery: {resumen_por_tabla(res)}"[:500])
+        except Exception: pass
+        if not res["ok"]: raise HTTPException(500, "Exportación incompleta")   # Scheduler lo marca y reintenta
+        return {"nodo": NODO, **res}
 
     @app.post("/api/control")
     def control(request: Request, accion: str = ""):

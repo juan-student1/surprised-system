@@ -25,6 +25,7 @@ Usuarios (web · Telegram · app Android)
 Cloud Scheduler ──(OIDC, SA centinela-tareas)──► POST /tareas/latido en JE (cada minuto)
 JE/JP ──Tailscale──► Lenovo "centinela-ia": Ollama (modelo `centinela`) + n8n (bot de Telegram y avisos)
 JE ──(si Ollama no responde, con topes)──► Vertex AI Gemini (docs/16_VERTEX_AI.md)
+Scheduler ──(OIDC, diario)──► /tareas/exportar en JE ──► BigQuery centinela_analitica ──► Looker Studio (docs/17)
 Secretos: Secret Manager (uno por secreto, permiso secreto por secreto)
 ```
 - **API** (`servidor/app/`): FastAPI, la misma en JE y JP. Capas en `centinela/`: `config` → `utilidades` (dominio puro)

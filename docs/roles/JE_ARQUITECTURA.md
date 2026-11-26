@@ -23,7 +23,9 @@ flowchart LR
         SM["🔐 Secret Manager"]
         SQL[("🗄️ Cloud SQL<br/>Postgres 17")]
         VTX["✨ Vertex AI<br/>Gemini Flash · respaldo a demanda"]
+        BQ[("📊 BigQuery<br/>centinela_analitica")]
     end
+    LS["Looker Studio"]
 
     subgraph JPV["VM de JP"]
         JP["🟠 JP · respaldo<br/>API + Auth Proxy"]
@@ -46,6 +48,8 @@ flowchart LR
     RUN -.->|"Tailscale userspace"| OLL
     JP -.->|"Tailscale"| OLL
     RUN -.->|"si Ollama no responde · con topes"| VTX
+    SCH -->|"POST /tareas/exportar · diario"| RUN
+    RUN -->|"agregados anonimizados"| BQ --> LS
 ```
 
 **Flujo de una consulta:** el usuario abre la web → el Worker sirve la página → la web pide `/api/numero/…` → el Worker reenvía a JE con el secreto del gateway y la IP real → JE consulta Cloud SQL y responde → si JE no contesta en 6 s (o lo devuelve Google con 403/404), el Worker lo marca caído 30 s y reintenta en JP.
@@ -113,6 +117,11 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 - **Decisión:** Ollama → Gemini (`gemini-3.8-flash`, endpoint `global`) → reglas. Gemini solo por acción de una persona, con tope por hora (20), por día (100), de análisis profundos (10/día), caché de 1 h y timeout de 20 s. Identidad `centinela-run` con `roles/aiplatform.user`. Detalle: [`16_VERTEX_AI.md`](../16_VERTEX_AI.md).
 - **Consecuencias:** + el chat sigue "inteligente" aunque el Lenovo se apague; + análisis profundo a demanda. − Costo variable acotado por los topes; − lo que va a Gemini sale de nuestra red (por eso se anonimiza y lo sensible se queda local).
 
+### ADR‑014 · Analítica en BigQuery con exportación diaria agregada ✅ (Fase 4)
+- **Contexto:** Cloud SQL tiene conector obligatorio (correcto: Looker no debe entrar a producción) y el profesor/JM necesitan un panel explicado.
+- **Decisión:** Cloud Scheduler (OIDC) → `POST /tareas/exportar` una vez al día → JE recalcula agregados y los sube con *load jobs* `WRITE_TRUNCATE` (gratis, idempotente) a `centinela_analitica`; vistas `v_*` para Looker Studio. `centinela-run` con `bigquery.dataEditor` **solo en el dataset** y `bigquery.jobUser`. Detalle: [`17_LOOKER_STUDIO.md`](../17_LOOKER_STUDIO.md).
+- **Consecuencias:** + costo 0 (nivel gratis); + producción aislada; + nada personal sale de Cloud SQL (números enmascarados, solo conteos). − Datos con hasta un día de retraso (suficiente para tendencias).
+
 ## 3. Costos mensuales estimados
 
 | Recurso | Plan / tamaño | USD/mes |
@@ -130,7 +139,7 @@ Formato corto: **contexto → decisión → consecuencias**. Estado: ✅ vigente
 | **Total nube** | | **≈ 10‑12 USD/mes** (del crédito de 300 USD) |
 
 **Vertex AI Gemini (Fase 3):** centavos en uso normal; peor caso acotado por los topes (orden de 10‑20 USD/mes, ver `16_VERTEX_AI.md` §4).
-**Fase siguiente (por estimar antes de crear nada):** BigQuery dentro del nivel gratis (10 GB de almacenamiento y 1 TB de consultas al mes) y un segundo trabajo de Scheduler (Fase 4).
+**BigQuery + Looker Studio (Fase 4):** 0 (ver `17_LOOKER_STUDIO.md` §3). Detalle previo: BigQuery dentro del nivel gratis (10 GB de almacenamiento y 1 TB de consultas al mes) y un segundo trabajo de Scheduler (Fase 4).
 
 ## 4. Qué mostrar en la sustentación (JE)
 1. Este diagrama y por qué cada pieza está donde está (ADR 001‑006).
