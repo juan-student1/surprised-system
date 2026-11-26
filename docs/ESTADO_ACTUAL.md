@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `chore/cimientos` (Fase 1)
+> Última actualización: **2026‑11‑25** · equipo: PC de mesa · rama: `feat/roles` (Fase 2)
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -13,11 +13,20 @@
 | Auditoría bloque 2 en JE y gateway: `GATEWAY_SECRET` + `BOT_SECRET` (H1, M1) | 2026‑11‑17 | JE |
 | Auditoría de la migración (C1‑C5): Tailscale 1.104.7, puerta única, llave TS fuera del proceso, OIDC con caché, requests 2.33.0 | 2026‑11‑20 | JE |
 | Fase 0: diagnóstico del repo | 2026‑11‑25 | JE |
+| **Fase 1 · Cimientos** (PR #1, merge): `CLAUDE.md`, este tablero, 72 tests, CI (ruff, pytest, shellcheck, gitleaks, trivy) | 2026‑11‑25 | JE |
 
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| **Fase 1 · Cimientos:** `CLAUDE.md`, este tablero, 72 tests de la API con pytest, CI (ruff, pytest, shellcheck, gitleaks, trivy fs) | `chore/cimientos` | JE |
+| **Fase 2 · Roles e interfaces** (código listo, **sin desplegar**): docs `roles/JE_ARQUITECTURA.md`, `roles/JP_SEGURIDAD.md`, `roles/JM_VENTAS.md`; web "Para empresas" + formulario de leads; panel con pestañas Arquitectura / Seguridad / Ventas; API v1.6.0 (`/api/leads`, `/api/interno/*`, métricas 401/403/429 por hora); migración `db/004`; `nube/09_lectura_jp.sh`; `ataques.sh` con 3 pruebas nuevas; 86 tests | `feat/roles` | JE (+ JP y JM revisan su doc) |
+
+### Para desplegar la Fase 2 (en este orden, cada paso con "ok" de Juan)
+1. **Migración** (Cloud SQL Studio, usuario `centinela_app`, base `centinela`): pegar `db/004_leads_y_seguridad.sql` → Run. Sin costo.
+2. **JE** (Cloud Shell): `cd ~/surprised-system && git pull && bash nube/05_desplegar.sh` → nueva revisión v1.6.0. Sin costo adicional (nivel gratis).
+3. **Gateway** (PC): `cd gateway && npx wrangler deploy`. Requiere `CONTROL_TOKEN` en el Worker (ya existe: lo usa el botón "Detener JE"). Sin costo.
+4. **JP** (cuando haga lo del bloque 2): `sudo bash servidor/actualizar.sh` (la misma BD, no necesita migración).
+5. **Rol de lectura de JP** (Cloud Shell, correo de JP por privado): `CORREO_JP=… bash nube/09_lectura_jp.sh`. Sin costo.
+6. **Comprobar:** web → "Para empresas" → enviar un lead de prueba → panel → Ventas; panel → Seguridad (correr `bash servidor/ataques.sh` y esperar 1 min); panel → Arquitectura en verde.
 
 ## Pendiente ⏳
 | # | Qué | Origen | Responsable | Bloquea |
@@ -27,17 +36,18 @@
 | 3 | Prueba de failover completa con JP (doc 12 §3) | doc 12 | JE + JP | Sustentación |
 | 4 | C6: ACL de Tailscale con `tag:centinela-run` + llave con tag + `TS_TAGS=… nube/05_desplegar.sh` | doc 15 §2.6 | JE (panel de Tailscale) | — |
 | 5 | B3: quitar el token por URL en `/api/llamada` cuando MacroDroid/Atajos usen encabezado | doc 14 | JP | — |
-| 6 | B5: Cloudflare Rate Limiting + cola para la IA | doc 14 | JP | — |
-| 7 | B4: correo noreply en commits (ya configurado en el PC de mesa; revisar el Lenovo) y `chat_id` como variable en n8n | doc 14 | JE | — |
-| 8 | Actualizar la tabla de hallazgos de la doc 14 (H1/M1 figuran "Abierto" pero están en código) | Fase 0 | JP (Fase 2) | — |
-| 9 | Docs desactualizadas: README sin JM, docstrings de `main.py`/`db.py` hablan de Supabase, doc 12 habla de la VM de JE | Fase 0 | JE | — |
-| 10 | Fase 2 · Roles (JE arquitectura, JP seguridad, JM ventas) + interfaces | plan | JE/JP/JM | "ok" de la Fase 1 |
-| 11 | Fase 3 · Vertex AI (Gemini) como respaldo de Ollama | plan | JE | Fase 2 |
+| 6 | B5: regla de Rate Limiting de Cloudflare para `/api/chat` y `/api/leads` | doc 14 | JP | — |
+| 7 | B4: revisar correo noreply en el Lenovo; `chat_id` como variable en n8n | doc 14 | JE | — |
+| 8 | JM: confirmar el enlace exacto del dato "71 % recibió un intento de fraude" (fuente [4] de `JM_VENTAS.md`) | Fase 2 | JM | Sustentación |
+| 9 | API con llave por empresa (tabla de llaves con hash, cuota mensual) — solo cuando haya un piloto | `JM_VENTAS.md` §6 | JE | — |
+| 10 | Doc 12 todavía explica actualizar JE en la VM (ya no existe) | Fase 0 | JE | — |
+| 11 | Fase 3 · Vertex AI (Gemini) como respaldo de Ollama | plan | JE | "ok" de la Fase 2 |
 | 12 | Fase 4 · BigQuery + Looker Studio | plan | JE | Fase 3 |
 | 13 | Fase 5 · Pulir y vender | plan | todos | Fase 4 |
-| 14 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale; cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
+| 14 | **Cierre del curso:** revocar token del bot, llave JSON de `centinela-jp`, llave de Tailscale, roles de lectura de JP (`nube/09_lectura_jp.sh quitar`); cerrar proyecto GCP | doc 00 §7 | JE | Diciembre |
 
 ## Notas de la última sesión
-- CI nuevo: acciones fijadas por SHA; gitleaks 8.30.1 y trivy 0.76.1 con checksum verificado.
-- Lint: se quitaron 5 imports sin uso y variables de bucle sin uso en los `.sh` (sin cambio de comportamiento).
-- `ruff.toml` tolera el estilo compacto del proyecto (varias sentencias por línea).
+- Las métricas de seguridad se cuentan en memoria y se vuelcan en cada latido (nunca una escritura por petición). Si la migración 004 no está aplicada, JE solo registra un aviso en el log y conserva los conteos.
+- `/api/interno/*` exige `GATEWAY_SECRET` **y** `CONTROL_TOKEN`; desde afuera del Worker responde 404.
+- El aviso de Telegram de un lead nuevo no lleva datos personales (solo empresa, segmento y plan).
+- Precios de la landing ($14.900 Pro, desde $790.000 Empresa) son hipótesis de piloto de JM, a validar con entrevistas.
