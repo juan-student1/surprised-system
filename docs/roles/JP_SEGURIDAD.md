@@ -56,15 +56,15 @@ Solo contra **nuestro** servicio. `bash servidor/ataques.sh [URL_DEL_GATEWAY] [U
 
 | # | Ataque | Qué se espera | Qué demuestra |
 |---|---|---|---|
-| 1 | 250 peticiones en paralelo | Muchas `429`, el servicio sigue en pie | Límites por IP (borde + nodo) |
-| 2 | Cuerpo de 20 KB | `413` | El Worker corta payloads grandes |
-| 3 | Registrar llamada sin token | `401` | Endpoints sensibles autenticados |
-| 4 | Inyección SQL en el número | `422` y la BD intacta | Validación + consultas parametrizadas |
-| 5 | Fuerza bruta al panel | `429` tras 5 intentos | Bloqueo de login (¡te bloquea a ti 15 min!) |
-| 6 | Cabeceras de seguridad | 4 de 4 | CSP, HSTS, X‑Frame‑Options, nosniff |
-| 7 | Entrar directo al nodo saltándose el Worker | `403` | Puerta única (M1) |
-| 8 | Rutas internas del panel desde afuera | `404` | `/api/interno/*` y `/api/control` no existen fuera del Worker |
-| 9 | Spam al formulario de empresas (con la trampa llena) | `200` × 3 y luego `429`; nada se guarda | Anti‑spam de leads |
+| 1 | Cuerpo de 20 KB | `413` | El Worker corta payloads grandes |
+| 2 | Registrar llamada sin token | `401` | Endpoints sensibles autenticados |
+| 3 | Inyección SQL en el número | `422` y la BD intacta | Validación + consultas parametrizadas |
+| 4 | Fuerza bruta al panel (como navegador: `Sec-Fetch-Site`) | `401` × 5 y luego `429` | Bloqueo de login (¡te bloquea a ti 15 min!) |
+| 5 | Cabeceras de seguridad | 6 o más | CSP, HSTS, X‑Frame‑Options, nosniff, Referrer‑Policy, Permissions‑Policy |
+| 6 | Entrar directo al nodo saltándose el Worker | `403` | Puerta única (M1) |
+| 7 | Rutas internas del panel desde afuera | `404` | `/api/interno/*` y `/api/control` no existen fuera del Worker |
+| 8 | Spam al formulario de empresas (con la trampa llena) | `200` × 3 y luego `429`; nada se guarda | Anti‑spam de leads |
+| 9 | 250 peticiones en paralelo (va **al final**: agota el límite por IP ~1 min) | Muchas `429`, el servicio sigue en pie | Límites por IP (borde + nodo) |
 
 Después de correrlo: panel → **Seguridad** → los 401/403/429 aparecen en la hora actual (se vuelcan en el siguiente latido, ≤ 1 min).
 

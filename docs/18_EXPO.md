@@ -95,7 +95,7 @@ bash servidor/ataques.sh                    # 429 flood, 413 cuerpo gigante, 401
 GW=https://centinela.juan-gallego-sec.workers.dev
 curl -sI $GW/ | grep -iE "content-security|strict-transport|x-frame|x-content|referrer|permissions"
 ```
-Hoy salen CSP, HSTS, `X-Frame-Options: DENY`, `nosniff` y `Referrer-Policy`. **Falta `Permissions-Policy`** (los analizadores lo marcan como aviso menor).
+Salen CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` y, desde 2026‑11‑27, **`Permissions-Policy`** y **`Cross-Origin-Opener-Policy`**. Resultados de la verificación: `14_AUDITORIA_Y_MEJORAS.md` → *Verificación final antes de la expo*.
 
 **Web moderna** (rendimiento, accesibilidad, PWA, buenas prácticas)
 ```bash

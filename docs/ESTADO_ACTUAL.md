@@ -1,7 +1,7 @@
 # Estado actual de CENTINELA
 
 > Tablero vivo. **Se actualiza al final de cada sesión** (en cualquiera de los dos equipos) con commit y push.
-> Última actualización: **2026‑11‑26** (noche) · rama: `feat/apartados-por-rol` · **expo: martes 2026‑12‑01** → [`18_EXPO.md`](18_EXPO.md)
+> Última actualización: **2026‑11‑27** · rama: `security/cabeceras-y-ataques` · **expo: martes 2026‑12‑01** → [`18_EXPO.md`](18_EXPO.md)
 
 ## Hecho ✅
 | Qué | Cuándo | Responsable |
@@ -19,18 +19,19 @@
 | **Fase 5 · Pulir y vender** (PR #7, merge y gateway desplegado 2026‑11‑26): auditoría final (0 secretos, 0 vulnerabilidades altas), web móvil corregida (menú visible a 360‑390 px), README como producto, pitch y guion por rol, doc 12 al día | 2026‑11‑26 | JE |
 | **Fase 4 · Analítica** (PR #6, merge 2026‑11‑26): exportación a BigQuery, 8 tablas, 10 vistas, guía de Looker; pendiente de activar | 2026‑11‑26 | JE |
 | Guía de la expo [`18_EXPO.md`](18_EXPO.md) (PR #10, merge) | 2026‑11‑26 | JE |
+| **Apartados por rol en la web** `/arquitectura` (JE), `/seguridad` (JP), `/empresas` (JM) — PR #11, desplegado | 2026‑11‑27 | JE |
+| Verificación de código (Tarea A): gitleaks 0, trivy 0, pytest 122/122, ruff y shellcheck sin avisos; semgrep solo falsos positivos (doc 14) | 2026‑11‑27 | JE |
 
 ## En curso 🔄
 | Qué | Rama / PR | Responsable |
 |---|---|---|
-| **Apartados por rol en la web pública:** `/arquitectura` (JE), `/seguridad` (JP), `/empresas` (JM), con índice, estado en vivo, diagrama, STRIDE/OWASP, planes y piloto; portada enlazada. Falta: revisión visual de Juan y `wrangler deploy` con su ok | `feat/apartados-por-rol` | JE (+ JP y JM revisan su página) |
+| Verificación final (Tarea A): cabeceras `Permissions-Policy` y COOP, `ataques.sh` corregido, resultados en doc 14. Falta: merge, `wrangler deploy` con ok de Juan y Lighthouse/Observatory en su navegador | `security/cabeceras-y-ataques` | JE |
 
 ## Pendiente ⏳
 | # | Qué | Origen | Responsable | Bloquea |
 |---|---|---|---|---|
 | 1 | **Panel de Looker Studio** (`17_LOOKER_STUDIO.md` §5) + enlace de solo lectura | Fase 4 | JE | Expo |
 | 2 | **Verificación final en el PC de mesa**: `auditar .`, Lighthouse, Observatory (`18_EXPO.md` §4); hallazgos a doc 14 | Fase 5 | JE | Expo |
-| 3 | Cabecera `Permissions-Policy` en la web (aviso menor de los analizadores) | 2026‑11‑26 | JE | — |
 | 4 | Borrar el lead de prueba #1; correo de JP para `09_lectura_jp.sh` (opcional) | Fase 2 | JE | — |
 | 5 | C6: ACL de Tailscale con `tag:centinela-run` + llave con tag + `TS_TAGS=… nube/05_desplegar.sh` | doc 15 §2.6 | JE | — |
 | 6 | B3: quitar el token por URL en `/api/llamada`; B5: Rate Limiting de Cloudflare para `/api/chat` y `/api/leads` | doc 14 | JP | — |
@@ -40,11 +41,11 @@
 
 ## ▶️ Próxima sesión (empezar aquí)
 **Todo el sistema está en producción y JP está listo.** Falta para la expo del martes 2026‑12‑01 ([`18_EXPO.md`](18_EXPO.md)):
-1. **Apartados por rol:** revisar `/arquitectura`, `/seguridad` y `/empresas` en local (`cd gateway && npx wrangler dev`), merge del PR y `npx wrangler deploy` con el ok de Juan. JP y JM revisan el texto de su página.
-2. **PC de mesa:** verificación final (`18_EXPO.md` §4: `auditar .`, Lighthouse, Observatory) y anotar resultados en doc 14 (incluye la cabecera `Permissions-Policy`).
-3. **Looker Studio** (`17_LOOKER_STUDIO.md` §5) y su enlace de solo lectura en README y doc 13.
+1. **Tarea A:** merge de `security/cabeceras-y-ataques` y `wrangler deploy` (con ok); correr `ataques.sh` de nuevo; Lighthouse, Observatory, SSL Labs y PWA en el navegador de Juan → resultados a doc 14. JP y JM revisan su página.
+2. **Looker Studio** (`17_LOOKER_STUDIO.md` §5) y su enlace de solo lectura en README y doc 13.
 
 ## Notas de la última sesión
+- Sesión 2026‑11‑27 (PC de mesa): PR #11 mergeado y desplegado (apartados por rol en producción). Tarea A: herramientas de código limpias; `ataques.sh` tenía dos fallas del guion (orden del flood y fuerza bruta sin `Sec-Fetch-Site`), corregidas; se agregan `Permissions-Policy` y COOP. `shellcheck` no está instalado en el sistema: se usó `shellcheck-py` en un venv. Chrome headless no arranca en el PC de mesa (Lighthouse por DevTools).
 - Sesión 2026‑11‑26 noche (PC de mesa): apartados profesionales por rol en la web (páginas estáticas servidas por el mismo Worker, misma CSP, sin dependencias nuevas): `web/arquitectura.html`, `web/seguridad.html`, `web/empresas.html`, `web/paginas.css`, `web/paginas.js`. La página de seguridad es pública: describe controles sin detalles explotables.
 - Sesión 2026‑11‑26 tarde: JP conectado y verificado (v1.8.0, Cloud SQL, secretos, 403 directo). Guía de la expo en `18_EXPO.md`. Doc 08 marcado como histórico. JP confirmó la hora sincronizada. Sin ensayo formal (decisión de Juan).
 - Sesión 2026‑11‑26 (PC de mesa): merge de las Fases 4 y 5; gateway con la web corregida para celular; Vertex y BigQuery activados. En producción: JE v1.8.0 con IA híbrida y exportación diaria a BigQuery.
