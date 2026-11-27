@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empresas · Centinela</title>
+<meta name="description" content="Centinela para cooperativas, bancos, call centers y operadores: alertas cuando suplantan su marca, reputación de números por API y reporte de campañas. Piloto sin costo.">
+<meta name="theme-color" content="#16203A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%232346D8'/%3E%3Cpath d='M11 16.5l3.5 3.5L21 13' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/paginas.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <a class="marca" href="/" aria-label="Centinela, inicio">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z"/><path class="check" d="M11 16.5l3.5 3.5L21 13"/></svg>
+    Centinela
+  </a>
+  <nav class="menu-nav" aria-label="Principal">
+    <button class="menu-btn" type="button" popovertarget="menu" aria-controls="menu">Menú</button>
+    <div class="menu" id="menu" popover="auto">
+      <a href="/">Consultar un número</a>
+      <a href="/arquitectura">Arquitectura</a>
+      <a href="/seguridad">Seguridad</a>
+      <a href="/empresas" aria-current="page">Empresas</a>
+      <a href="/admin" rel="noopener">Panel admin</a>
+      <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
+    </div>
+  </nav>
+  <a class="pulso" href="/arquitectura#estado" id="pulso">
+    <span class="punto"></span><span id="pulso-txt" aria-live="polite">Conectando…</span>
+  </a>
+</header>
+
+<main id="contenido">
+  <section class="doc-hero" aria-labelledby="titulo">
+    <ol class="doc-miga" aria-label="Ruta"><li><a href="/">Centinela</a></li><li aria-current="page">Empresas</li></ol>
+    <p class="doc-eti">Centinela para empresas</p>
+    <h1 id="titulo">Sepan que suplantan su marca en minutos, no en semanas</h1>
+    <p class="doc-lead">Cuando un estafador llama a sus clientes haciéndose pasar por ustedes, la comunidad de Centinela lo reporta. Les avisamos de la campaña en cuanto tres personas distintas la reportan, protegemos a sus asociados antes de que contesten y les damos la reputación de cualquier número por API.</p>
+    <div class="doc-acciones">
+      <a class="btn-principal" href="/#empresas">Solicitar un piloto sin costo</a>
+      <a class="btn-sec" href="#planes">Ver planes</a>
+    </div>
+    <ul class="kpis" aria-label="El problema en cifras">
+      <li><strong>71 %</strong><span>de los colombianos recibió un intento de fraude en el último año<sup class="ref"><a href="#f4">[4]</a></sup></span></li>
+      <li><strong>46 %</strong><span>de ellos sufrió al menos una estafa consumada<sup class="ref"><a href="#f4">[4]</a></sup></span></li>
+      <li><strong>13.600</strong><span>denuncias de fraude telefónico en 2024, 18 % más que en 2023<sup class="ref"><a href="#f3">[3]</a></sup></span></li>
+      <li><strong>15 min</strong><span>para detectar una campaña: 3 personas distintas reportando el mismo número</span></li>
+    </ul>
+  </section>
+
+  <div class="doc-cuerpo">
+    <aside class="doc-indice" aria-label="Índice">
+      <p>En esta página</p>
+      <nav aria-label="En esta página">
+        <ol>
+          <li><a href="#problema">El problema</a></li>
+          <li><a href="#como">Cómo funciona</a></li>
+          <li><a href="#soluciones">Soluciones por sector</a></li>
+          <li><a href="#planes">Planes</a></li>
+          <li><a href="#diferencia">Por qué Centinela</a></li>
+          <li><a href="#mercado">Mercado</a></li>
+          <li><a href="#piloto">Piloto de 30 días</a></li>
+          <li><a href="#preguntas">Preguntas frecuentes</a></li>
+          <li><a href="#fuentes">Fuentes</a></li>
+        </ol>
+      </nav>
+      <div class="doc-responsable"><b>JM · Ventas</b>Mercado, propuesta de valor, planes y demo comercial.</div>
+    </aside>
+
+    <article class="doc-contenido">
+      <section class="doc-sec" id="problema" aria-labelledby="t-problema">
+        <h2 id="t-problema">El problema</h2>
+        <p class="sub">En Colombia contestar un número desconocido es una apuesta, y quien pierde casi nunca es el único afectado.</p>
+        <ul class="tarjetas">
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🏦</span><h3>Suplantan su marca</h3><p>El "falso banco" o la "falsa cooperativa" pide el código del SMS. El asociado pierde su dinero y la entidad pierde su confianza.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">⏱️</span><h3>Se enteran tarde</h3><p>La entidad conoce la campaña cuando llegan las quejas, días después de que empezó.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">🧍</span><h3>Cada víctima, sola</h3><p>Lo que aprende una persona no protege a la siguiente. Los filtros del celular no explican el riesgo ni el tipo de fraude.</p></li>
+          <li class="tarjeta"><span class="ico" aria-hidden="true">📞</span><h3>Sus líneas, marcadas como spam</h3><p>Los call centers legítimos pierden contactabilidad porque sus números terminan en listas negras genéricas.</p></li>
+        </ul>
+        <p class="nota">El vishing (fraude por llamada) es el canal donde más personas pierden dinero, según TransUnion<sup class="ref"><a href="#f3">[3]</a></sup>.</p>
+      </section>
+
+      <section class="doc-sec" id="como" aria-labelledby="t-como">
+        <h2 id="t-como">Cómo funciona</h2>
+        <p class="sub">La inteligencia colectiva de la comunidad, convertida en alertas para su operación.</p>
+        <ol class="pasos">
+          <li><b>La comunidad reporta.</b><span>Por web, Telegram o la app Android, en dos clics. La IA clasifica el tipo de fraude (falso banco, wangiri, extorsión, cobranza…).</span></li>
+          <li><b>Centinela califica cada número de 0 a 100.</b><span>Cuenta personas distintas, no reportes: una sola persona no puede "hundir" un número.</span></li>
+          <li><b>Detecta campañas.</b><span>Tres personas distintas en 15 minutos encienden una alerta, y la IA agrupa números que siguen el mismo libreto.</span></li>
+          <li><b>Su organización actúa.</b><span>Alerta cuando la campaña usa su marca, consulta por API antes de que un asociado conteste o de que un agente marque, y reporte mensual para su gestión de riesgo.</span></li>
+        </ol>
+        <p class="nota">Hoy la comunidad vigila <b data-stat="numeros">—</b> números con <b data-stat="reportes">—</b> reportes (dato en vivo).</p>
+      </section>
+
+      <section class="doc-sec" id="soluciones" aria-labelledby="t-soluciones">
+        <h2 id="t-soluciones">Soluciones por sector</h2>
+        <p class="sub">El mismo motor, empaquetado para el dolor de cada cliente.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Sector</th><th scope="col">Dolor</th><th scope="col">Qué les damos</th><th scope="col">Quién decide</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Cooperativas y bancos pequeños</th><td>Suplantan su marca; no tienen un equipo antifraude grande</td><td>Alertas de campañas contra su marca, consulta por API desde su app, sus números oficiales marcados como verificados y reporte mensual</td><td>Riesgo y cumplimiento (SARO, SARLAFT)</td></tr>
+              <tr><th scope="row">Call centers y BPO</th><td>Sus líneas salientes terminan marcadas como spam</td><td>Reputación de números antes de marcar y monitoreo de sus propias líneas</td><td>Operaciones y calidad</td></tr>
+              <tr><th scope="row">Operadores de telefonía</th><td>Wangiri y suplantación en su red; presión regulatoria</td><td>Campañas detectadas por personas reales, en tiempo real</td><td>Fraude y regulatorio</td></tr>
+              <tr><th scope="row">Personas y familias</th><td>Miedo a contestar; adultos mayores como blanco</td><td>Consulta gratis y, en Pro, aviso en el celular al momento de la llamada</td><td>La persona o quien configura el celular de sus papás</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="planes" aria-labelledby="t-planes">
+        <h2 id="t-planes">Planes</h2>
+        <p class="sub">Precios de referencia del piloto 2026, en validación con clientes.</p>
+        <div class="precios">
+          <article class="precio-card">
+            <h3>Gratis</h3><p class="para">Para cualquier persona</p>
+            <p class="valor">$0</p>
+            <ul><li>Consulta en la web y en Telegram</li><li>Reportes ilimitados</li><li>Alertas de campañas activas</li></ul>
+            <a class="btn-sec" href="/">Consultar un número</a>
+          </article>
+          <article class="precio-card">
+            <h3>Pro</h3><p class="para">Para personas y familias</p>
+            <p class="valor">$14.900 <small>COP / mes</small></p>
+            <ul><li>App Android con aviso al entrar la llamada</li><li>Alertas privadas por Telegram</li><li>Historial de llamadas de tu celular</li></ul>
+            <a class="btn-sec" href="/#empresas">Quiero Pro</a>
+          </article>
+          <article class="precio-card destacado">
+            <h3>Empresa</h3><p class="para">Cooperativas, bancos, call centers y operadores</p>
+            <p class="valor">Desde $790.000 <small>COP / mes</small></p>
+            <ul><li>API con llave propia (hasta 100.000 consultas al mes)</li><li>Alertas de campañas contra su marca</li><li>Números oficiales verificados</li><li>Reporte mensual para riesgo y cumplimiento</li><li>Soporte y acuerdo de servicio</li></ul>
+            <a class="btn-principal" href="/#empresas">Solicitar piloto</a>
+          </article>
+        </div>
+        <p class="nota">Evitar un solo fraude a un asociado suele costar más que la mensualidad. El costo de nube por cliente es menor al 5 % del precio. La API con llave por empresa se habilita con el primer cliente piloto.</p>
+      </section>
+
+      <section class="doc-sec" id="diferencia" aria-labelledby="t-diferencia">
+        <h2 id="t-diferencia">Por qué Centinela</h2>
+        <p class="sub">Cuatro diferencias que se pueden verificar.</p>
+        <ul class="tarjetas">
+          <li class="tarjeta"><h3>Hecho para Colombia</h3><p>Prefijos, modalidades y lenguaje locales: falso Bancolombia, Nequi, DIAN, "su familiar está detenido".</p></li>
+          <li class="tarjeta"><h3>Comunidad + campañas en tiempo real</h3><p>El riesgo lo dan personas distintas y las campañas se detectan en 15 minutos.</p></li>
+          <li class="tarjeta"><h3>Privacidad por diseño</h3><p>IA privada, reporteros anónimos y números enmascarados. <a href="/seguridad#privacidad">Ver detalles</a>.</p></li>
+          <li class="tarjeta"><h3>Siempre disponible</h3><p>Dos servidores en redes distintas con cambio automático en menos de un segundo. <a href="/arquitectura">Ver arquitectura</a>.</p></li>
+        </ul>
+        <h3>Frente a las alternativas</h3>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Alternativa</th><th scope="col">Fortaleza</th><th scope="col">Lo que no resuelve</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Identificadores globales (Truecaller, Hiya)</th><td>Base mundial, nombre de quien llama</td><td>Poco foco en modalidades locales; sin servicio para cooperativas</td></tr>
+              <tr><th scope="row">Filtro de spam del celular</th><td>Gratis, viene instalado</td><td>No explica el riesgo ni el tipo de fraude; nada para empresas</td></tr>
+              <tr><th scope="row">Listas negras internas de cada banco</th><td>Datos propios</td><td>Cada entidad sola: no ve lo que reportan los clientes de otras</td></tr>
+              <tr><th scope="row">Medidas de operadores y del regulador</th><td>Escala de red</td><td>Lentas; no avisan al usuario en el momento</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="mercado" aria-labelledby="t-mercado">
+        <h2 id="t-mercado">Mercado</h2>
+        <p class="sub">Dónde empezamos y hasta dónde puede llegar. Las cifras de tamaño son hipótesis para validar con el piloto.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Dato</th><th scope="col">Cifra</th><th scope="col">Fuente</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Líneas móviles activas</th><td>92,5 millones (penetración del 174 %)</td><td><a href="#f1">MinTIC [1]</a></td></tr>
+              <tr><th scope="row">Cooperativas de ahorro y crédito</th><td>172 entidades, más de 4,4 millones de asociados</td><td><a href="#f7">La República [7]</a></td></tr>
+              <tr><th scope="row">Industria de contact center</th><td>750.000–790.000 empleos, ≈ 3 % del PIB</td><td><a href="#f5">[5]</a> <a href="#f6">[6]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="kpis">
+          <li><strong>TAM</strong><span>≈ 92 millones de líneas móviles que se pueden proteger</span></li>
+          <li><strong>SAM</strong><span>172 cooperativas + bancos pequeños, fintech y contact centers</span></li>
+          <li><strong>SOM año 1</strong><span>10 cooperativas + 500 usuarios Pro ≈ 184 millones de COP al año</span></li>
+        </ul>
+        <p class="nota">Nuestra cuña son las cooperativas y los bancos pequeños: nadie les vende antifraude telefónico a su medida y su regulación les exige gestionar el riesgo de fraude.</p>
+      </section>
+
+      <section class="doc-sec" id="piloto" aria-labelledby="t-piloto">
+        <h2 id="t-piloto">Piloto de 30 días, sin costo</h2>
+        <p class="sub">Para las tres primeras cooperativas o bancos que se sumen.</p>
+        <ol class="linea-tiempo">
+          <li><time>Semana 0</time><b>Reunión de arranque</b><span>Entendemos qué campañas los afectan, qué números oficiales usan y quién recibe las alertas.</span></li>
+          <li><time>Semana 1</time><b>Configuración</b><span>Sus números oficiales quedan como verificados, se activan las alertas de su marca y se entrega una llave de API de prueba.</span></li>
+          <li><time>Semanas 2 y 3</time><b>Operación</b><span>Alertas en tiempo real y consulta desde su canal de atención o su app.</span></li>
+          <li><time>Semana 4</time><b>Informe y decisión</b><span>Campañas detectadas, números de riesgo que llamaron a sus asociados y una propuesta para continuar.</span></li>
+        </ol>
+        <div class="cinta-cta">
+          <div><h3>¿Agendamos el piloto de su entidad?</h3><p>Déjenos sus datos y le escribimos en un día hábil.</p></div>
+          <a href="/#empresas">Hablar con ventas</a>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="preguntas" aria-labelledby="t-preguntas">
+        <h2 id="t-preguntas">Preguntas frecuentes</h2>
+        <div class="faq">
+          <details><summary>¿Necesitan datos de nuestros asociados?</summary><p>No. Centinela funciona con los números que reporta la comunidad. Para alertarlos solo necesitamos saber cuáles son sus números oficiales y a quién avisar.</p></details>
+          <details><summary>¿Cómo se integra con nuestra operación?</summary><p>Con una API REST para consultar la reputación de un número o reportarlo, alertas por Telegram y un reporte mensual. No hay que instalar nada en sus servidores.</p></details>
+          <details><summary>¿Qué pasa si el servicio se cae?</summary><p>Corre en dos servidores en redes distintas con cambio automático en menos de un segundo, y si la base de datos falla los reportes no se pierden. <a href="/arquitectura#fallos">Ver tolerancia a fallos</a>.</p></details>
+          <details><summary>¿Cómo protegen los datos personales?</summary><p>Tratamiento conforme a la Ley 1581 de 2012: reporteros anónimos, números enmascarados al público, IA privada y acceso al panel con doble factor. <a href="/seguridad">Ver el centro de confianza</a>.</p></details>
+          <details><summary>¿Pueden marcar nuestros números oficiales como seguros?</summary><p>Sí. Un número verificado queda con riesgo 0 y así sus asociados distinguen su llamada real de la falsa.</p></details>
+          <details><summary>¿Quién está detrás de Centinela?</summary><p>Un equipo de Ingeniería de Sistemas de Uniremington (2026): arquitectura, seguridad y ventas. El código es público en GitHub.</p></details>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="fuentes" aria-labelledby="t-fuentes">
+        <h2 id="t-fuentes">Fuentes</h2>
+        <p class="sub">Las cifras de fraude varían entre fuentes (denuncias, encuestas y datos privados); se citan como orden de magnitud.</p>
+        <ol class="fuentes">
+          <li id="f1">MinTIC, primer trimestre de 2025 (92,5 millones de líneas móviles): <a href="https://mintic.gov.co/portal/inicio/Sala-de-prensa/Noticias/404518:Colombia-cerro-el-primer-trimestre-de-2025-con-mas-de-49-millones-de-accesos-moviles-a-Internet">mintic.gov.co</a></li>
+          <li id="f2">Portafolio, internet móvil en Colombia: <a href="https://www.portafolio.co/tecnologia/negocios-empresas-internet-movil-en-colombia-crece-a-49-1-millones-de-accesos-en-el-primer-trimestre-637043">portafolio.co</a></li>
+          <li id="f3">El País Cali, cibercrimen en Colombia: <a href="https://www.elpais.com.co/colombia/cibercrimen-en-colombia-cierra-2025-con-13-mil-casos-alerta-por-modalidades-de-fraude-3146.html">elpais.com.co</a> · La República (TransUnion): <a href="https://www.larepublica.co/finanzas/las-estafas-por-correo-internet-y-llamadas-cayeron-74-en-2025-hasta-llegar-a-2-3-4402402">larepublica.co</a></li>
+          <li id="f4">DataCrédito Experian, <i>Del fraude digital a la confianza digital</i> (2026), en La República: <a href="https://www.larepublica.co/finanzas/estudio-de-datacredito-experian-revelo-que-intento-de-fraude-llego-a-71-de-las-personas-en-el-ultimo-ano-4474135">larepublica.co</a> y Portafolio: <a href="https://www.portafolio.co/economia/finanzas/el-71-de-colombianos-enfrento-intentos-de-fraude-durante-el-ultimo-ano-y-46-reporto-una-estafa-consumada-501838">portafolio.co</a></li>
+          <li id="f5">Noticias RCN, empleo en BPO: <a href="https://www.noticiasrcn.com/economia/call-center-bpo-tiene-mas-de-750-mil-empleos-en-colombia-891279">noticiasrcn.com</a></li>
+          <li id="f6">Bancolombia, sector de contact centers: <a href="https://www.bancolombia.com/empresas/capital-inteligente/actualidad-economica-sectorial/evolucion-bpo-colombia">bancolombia.com</a></li>
+          <li id="f7">La República, sistema financiero cooperativo 2024: <a href="https://www.larepublica.co/finanzas/cifras-sistema-financiero-cooperativo-2024-4085157">larepublica.co</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+</main>
+
+<footer class="pie-doc">
+  <div>
+    <p><b>Centinela</b> · Antes de contestar, sabe quién te llama.</p>
+    <p>Hecho por JE, JP y JM · Ingeniería de Sistemas · Uniremington · 2026</p>
+  </div>
+  <nav aria-label="Producto"><h2>Producto</h2><ul><li><a href="/">Consultar un número</a></li><li><a href="/#reportar">Reportar una llamada</a></li><li><a href="/#comunidad">Comunidad</a></li><li><a href="/#app">App Android</a></li></ul></nav>
+  <nav aria-label="Plataforma"><h2>Plataforma</h2><ul><li><a href="/arquitectura">Arquitectura</a></li><li><a href="/seguridad">Seguridad</a></li><li><a href="/arquitectura#estado">Estado en vivo</a></li><li><a href="https://github.com/juan-student1/surprised-system">Código en GitHub</a></li></ul></nav>
+  <nav aria-label="Empresas"><h2>Empresas</h2><ul><li><a href="/empresas">Soluciones</a></li><li><a href="/empresas#planes">Planes</a></li><li><a href="/empresas#piloto">Piloto</a></li><li><a href="/#empresas">Hablar con ventas</a></li></ul></nav>
+</footer>
+
+<script src="/paginas.js"></script>
+</body>
+</html>

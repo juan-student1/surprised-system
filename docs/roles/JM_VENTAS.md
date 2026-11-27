@@ -1,6 +1,7 @@
 # JM · Ventas de Centinela
 
 > Responsable: **JM**. Interfaces: sección **Para empresas** de la web (`/#empresas`, formulario que guarda leads en la BD) y pestaña **Ventas** del panel (`/admin/ventas`).
+> Página pública del rol: **Empresas** (https://centinela.juan-gallego-sec.workers.dev/empresas), versión para clientes y jurado de este documento (sin detalles internos ni explotables).
 > Las cifras de mercado tienen su fuente al final; los precios son **hipótesis de piloto** para validar con clientes, no una tarifa publicada. Última revisión: 2026‑11‑25.
 
 ## 1. El problema

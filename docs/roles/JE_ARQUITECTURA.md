@@ -1,6 +1,7 @@
 # JE · Arquitectura de Centinela
 
 > Responsable: **JE (Juan)**. Interfaz: pestaña **Arquitectura** del panel (`/admin/arquitectura`), que muestra en vivo el estado de cada pieza.
+> Página pública del rol: **Arquitectura** (https://centinela.juan-gallego-sec.workers.dev/arquitectura), versión para clientes y jurado de este documento (sin detalles internos ni explotables).
 > Detalle de despliegue: [`15_CLOUD_RUN_CLOUD_SQL_IAM.md`](../15_CLOUD_RUN_CLOUD_SQL_IAM.md). Última revisión: 2026‑11‑25.
 
 ## 1. Diagrama actual

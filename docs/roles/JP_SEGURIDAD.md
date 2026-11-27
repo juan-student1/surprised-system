@@ -1,6 +1,7 @@
 # JP · Seguridad de Centinela
 
 > Responsable: **JP**. Interfaz: pestaña **Seguridad** del panel (`/admin/seguridad`): peticiones bloqueadas (401/403/429) por hora, rutas más atacadas, eventos y último escaneo del CI.
+> Página pública del rol: **Seguridad** (https://centinela.juan-gallego-sec.workers.dev/seguridad), versión para clientes y jurado de este documento (sin detalles internos ni explotables).
 > Este documento es **público**: describe riesgos y controles **sin detalles explotables**. Última revisión: 2026‑11‑25.
 
 ## 1. Modelo de amenazas (STRIDE)
@@ -32,8 +33,8 @@ Fronteras de confianza: Internet ↔ Worker · Worker ↔ nodos (JE/JP) · nodos
 
 | ID | Resumen | Estado real | Qué falta | Quién |
 |---|---|---|---|---|
-| H1 | Identidad del reportero alterable | ✅ En JE y gateway | Poner `GATEWAY_SECRET` y `BOT_SECRET` en JP | JP |
-| M1 | Nodos aceptaban tráfico directo | ✅ En JE | Lo mismo en JP (sin el secreto, JP sigue en modo anterior) | JP |
+| H1 | Identidad del reportero alterable | ✅ En JE, JP y gateway (JP desde 2026‑11‑26) | — | — |
+| M1 | Nodos aceptaban tráfico directo | ✅ En JE y JP (acceso directo → 403) | — | — |
 | M2, B1, B2, H2 | Privacidad de llamadas, `/api/cluster`, firma de sesión, multipart | ✅ Cerrados | — | — |
 | B3 | Token de llamadas aceptado por URL | Parcial: tiempo constante ✅; la URL sigue por MacroDroid/Atajos | Pasar MacroDroid/Atajos a encabezado `x-centinela-token` y quitar `?token=` | JP |
 | B4 | Datos personales menores en el historial | Commits nuevos con correo noreply ✅ | Revisar el correo en el Lenovo; `chat_id` como variable en n8n. No se reescribe el historial (riesgo bajo, rompería los clones) | JE |

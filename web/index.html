@@ -13,6 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="paginas.css">
 </head>
 <body>
 <a class="saltar" href="#inicio">Saltar al contenido</a>
@@ -28,10 +29,9 @@
     <a href="#reportar">Reportar</a>
     <a href="#comunidad">Comunidad</a>
     <a href="#sala">Sala 3D</a>
-    <a href="#cluster">Clúster</a>
-    <a href="#protegerte">Protégete</a>
-    <a href="#empresas">Empresas</a>
-    <a href="#app">App Android</a>
+    <a href="/arquitectura">Arquitectura</a>
+    <a href="/seguridad">Seguridad</a>
+    <a href="/empresas">Empresas</a>
     <a href="/admin" rel="noopener">Panel admin</a>
     <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
     </div>
@@ -188,7 +188,7 @@
   <section class="seccion cluster-sec" id="cluster">
     <div class="seccion-cab">
       <h2>El clúster, en vivo</h2>
-      <p>Centinela corre en dos nodos sobre la misma base de datos: el principal en Google Cloud Run y el respaldo en la VM de JP. Si el principal se apaga, el de respaldo atiende en menos de un segundo y nadie lo nota.</p>
+      <p>Centinela corre en dos nodos sobre la misma base de datos: el principal en Google Cloud Run y el respaldo en la VM de JP. Si el principal se apaga, el de respaldo atiende en menos de un segundo y nadie lo nota. <a href="/arquitectura">Ver la arquitectura completa →</a></p>
     </div>
 
     <div class="aviso-failover" id="aviso-failover" hidden></div>
@@ -246,6 +246,34 @@
 
 
   <!-- PARA EMPRESAS (JM · ventas) -->
+  <!-- POR DENTRO: un apartado por integrante -->
+  <section class="seccion" id="por-dentro">
+    <div class="seccion-cab">
+      <h2>Conoce Centinela por dentro</h2>
+      <p>Cómo está construido, cómo se protege y cómo lo usan las empresas. Cada apartado lo lidera un integrante del equipo.</p>
+    </div>
+    <div class="apartados">
+      <a class="tarjeta enlace" href="/arquitectura">
+        <p class="rol">JE · Arquitectura</p>
+        <h3>Una arquitectura que no se cae</h3>
+        <p>Dos nodos en redes distintas, failover en menos de un segundo, Google Cloud con identidad mínima, IA privada y el estado del clúster en vivo.</p>
+        <span class="mas">Ver la arquitectura →</span>
+      </a>
+      <a class="tarjeta enlace" href="/seguridad">
+        <p class="rol">JP · Seguridad</p>
+        <h3>Seguridad por diseño</h3>
+        <p>Cinco capas de defensa, modelo de amenazas STRIDE, OWASP API Top 10, privacidad bajo la Ley 1581 y pruebas en cada cambio.</p>
+        <span class="mas">Ir al centro de confianza →</span>
+      </a>
+      <a class="tarjeta enlace" href="/empresas">
+        <p class="rol">JM · Ventas</p>
+        <h3>Centinela para empresas</h3>
+        <p>Alertas cuando suplantan tu marca, reputación de números por API, planes y un piloto de 30 días sin costo para cooperativas y bancos.</p>
+        <span class="mas">Ver soluciones y planes →</span>
+      </a>
+    </div>
+  </section>
+
   <section class="seccion" id="empresas">
     <div class="seccion-cab">
       <h2>Para empresas</h2>
@@ -270,7 +298,7 @@
         <ul><li>API con llave propia (consulta y reporte)</li><li>Panel de campañas contra tu marca</li><li>Soporte y acuerdo de servicio</li></ul>
       </article>
     </div>
-    <p class="nota-planes">Precios de referencia del piloto 2026. La API con llave por empresa está en piloto: escríbenos y te damos acceso.</p>
+    <p class="nota-planes">Precios de referencia del piloto 2026. La API con llave por empresa está en piloto: escríbenos y te damos acceso. <a href="/empresas">Ver soluciones por sector, comparativa y cómo es el piloto →</a></p>
 
     <form id="form-lead" class="reporte" autocomplete="on" novalidate>
       <h3 class="form-titulo">Hablemos</h3>
@@ -322,9 +350,14 @@
   </section>
 </main>
 
-<footer class="pie">
-  <p><b>Hecho por JP, JM y JE</b> · Ingeniería de Sistemas · Uniremington</p>
-  <p class="pie-tec">Proyecto de Sistemas Distribuidos · Cloudflare · Google Cloud (Cloud Run, Cloud SQL) · Tailscale · Ollama · n8n · Telegram · <a href="/admin">Panel admin</a> · <a href="https://github.com/juan-student1/surprised-system">GitHub</a></p>
+<footer class="pie-doc con-chat">
+  <div>
+    <p><b>Centinela</b> · Antes de contestar, sabe quién te llama.</p>
+    <p>Hecho por JE, JP y JM · Ingeniería de Sistemas · Uniremington · 2026</p>
+  </div>
+  <nav aria-label="Producto"><h2>Producto</h2><ul><li><a href="#reportar">Reportar una llamada</a></li><li><a href="#comunidad">Comunidad</a></li><li><a href="#protegerte">Cómo protegerte</a></li><li><a href="#app">App Android</a></li></ul></nav>
+  <nav aria-label="Plataforma"><h2>Plataforma</h2><ul><li><a href="/arquitectura">Arquitectura</a></li><li><a href="/seguridad">Seguridad</a></li><li><a href="/arquitectura#estado">Estado en vivo</a></li><li><a href="https://github.com/juan-student1/surprised-system">Código en GitHub</a></li></ul></nav>
+  <nav aria-label="Empresas"><h2>Empresas</h2><ul><li><a href="/empresas">Soluciones</a></li><li><a href="/empresas#planes">Planes</a></li><li><a href="/empresas#piloto">Piloto</a></li><li><a href="#empresas">Hablar con ventas</a></li><li><a href="/admin">Panel admin</a></li></ul></nav>
 </footer>
 
 <!-- CHATBOT -->

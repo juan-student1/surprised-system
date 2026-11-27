@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura · Centinela</title>
+<meta name="description" content="Cómo está construido Centinela: dos nodos en redes distintas con failover en menos de un segundo, Google Cloud con IAM de privilegio mínimo, IA privada y analítica anónima.">
+<meta name="theme-color" content="#16203A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%232346D8'/%3E%3Cpath d='M11 16.5l3.5 3.5L21 13' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/paginas.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <a class="marca" href="/" aria-label="Centinela, inicio">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z"/><path class="check" d="M11 16.5l3.5 3.5L21 13"/></svg>
+    Centinela
+  </a>
+  <nav class="menu-nav" aria-label="Principal">
+    <button class="menu-btn" type="button" popovertarget="menu" aria-controls="menu">Menú</button>
+    <div class="menu" id="menu" popover="auto">
+      <a href="/">Consultar un número</a>
+      <a href="/arquitectura" aria-current="page">Arquitectura</a>
+      <a href="/seguridad">Seguridad</a>
+      <a href="/empresas">Empresas</a>
+      <a href="/admin" rel="noopener">Panel admin</a>
+      <button class="tema-btn" id="tema-btn" type="button" title="Cambiar tema claro/oscuro" aria-pressed="false">Tema</button>
+    </div>
+  </nav>
+  <a class="pulso" href="#estado" id="pulso">
+    <span class="punto"></span><span id="pulso-txt" aria-live="polite">Conectando…</span>
+  </a>
+</header>
+
+<main id="contenido">
+  <section class="doc-hero" aria-labelledby="titulo">
+    <ol class="doc-miga" aria-label="Ruta"><li><a href="/">Centinela</a></li><li>Plataforma</li><li aria-current="page">Arquitectura</li></ol>
+    <p class="doc-eti">Plataforma · Arquitectura</p>
+    <h1 id="titulo">Una arquitectura que no se cae</h1>
+    <p class="doc-lead">Centinela corre en dos nodos en redes y proveedores distintos, detrás de un gateway en el borde que cambia de uno a otro en menos de un segundo. La base de datos, los secretos y las identidades viven en Google Cloud con privilegio mínimo; la IA corre en un equipo propio para que los reportes no salgan a terceros.</p>
+    <ul class="doc-meta">
+      <li>Responsable: <b>JE · Arquitectura</b></li>
+      <li>Región: <b>us-east1</b></li>
+      <li>API: <b>v1.8.0</b></li>
+      <li>Actualizado: <b>noviembre de 2026</b></li>
+    </ul>
+    <ul class="kpis" aria-label="Cifras clave">
+      <li><strong>&lt; 1 s</strong><span>para pasar del nodo principal al de respaldo</span></li>
+      <li><strong>2 nodos</strong><span>en dos redes y dos proveedores distintos</span></li>
+      <li><strong>0–1</strong><span>instancias de Cloud Run: se paga solo lo que se usa</span></li>
+      <li><strong>≈ 11 USD</strong><span>al mes de nube para todo el sistema</span></li>
+      <li><strong>14</strong><span>decisiones de arquitectura documentadas</span></li>
+    </ul>
+  </section>
+
+  <div class="doc-cuerpo">
+    <aside class="doc-indice" aria-label="Índice">
+      <p>En esta página</p>
+      <nav aria-label="En esta página">
+        <ol>
+          <li><a href="#estado">Estado en vivo</a></li>
+          <li><a href="#diagrama">Diagrama de la plataforma</a></li>
+          <li><a href="#recorrido">Recorrido de una consulta</a></li>
+          <li><a href="#fallos">Tolerancia a fallos</a></li>
+          <li><a href="#stack">Tecnologías por capa</a></li>
+          <li><a href="#decisiones">Decisiones de arquitectura</a></li>
+          <li><a href="#costos">Costos de operación</a></li>
+          <li><a href="#evolucion">Evolución y escalamiento</a></li>
+        </ol>
+      </nav>
+      <div class="doc-responsable"><b>JE · Arquitectura</b>Nube (Google Cloud y Cloudflare), nodo principal, IA en el Lenovo y este repositorio.</div>
+    </aside>
+
+    <article class="doc-contenido">
+      <section class="doc-sec" id="estado" aria-labelledby="t-estado">
+        <h2 id="t-estado">Estado en vivo</h2>
+        <p class="sub">Lo que el gateway ve en este momento. Se actualiza cada 15 segundos con la misma consulta que usa para decidir a qué nodo enviar cada petición.</p>
+        <div class="vivo">
+          <article class="vivo-nodo" id="vivo-JE" data-estado="cargando">
+            <div class="vivo-cab"><h3>JE · principal</h3><span class="chip neutro">Consultando…</span></div>
+            <p class="donde">Google Cloud Run · us-east1</p>
+            <dl>
+              <div><dt>Latencia</dt><dd data-v="lat">—</dd></div>
+              <div><dt>Base de datos</dt><dd data-v="db">—</dd></div>
+              <div><dt>IA</dt><dd data-v="ia">—</dd></div>
+              <div><dt>Versión</dt><dd data-v="ver">—</dd></div>
+              <div><dt>Encendido hace</dt><dd data-v="up">—</dd></div>
+            </dl>
+          </article>
+          <article class="vivo-nodo" id="vivo-JP" data-estado="cargando">
+            <div class="vivo-cab"><h3>JP · respaldo</h3><span class="chip neutro">Consultando…</span></div>
+            <p class="donde">VM propia · otra red, otro proveedor</p>
+            <dl>
+              <div><dt>Latencia</dt><dd data-v="lat">—</dd></div>
+              <div><dt>Base de datos</dt><dd data-v="db">—</dd></div>
+              <div><dt>IA</dt><dd data-v="ia">—</dd></div>
+              <div><dt>Versión</dt><dd data-v="ver">—</dd></div>
+              <div><dt>Encendido hace</dt><dd data-v="up">—</dd></div>
+            </dl>
+          </article>
+        </div>
+        <p class="vivo-pie" id="vivo-hora" aria-live="polite">Conectando con el gateway…</p>
+      </section>
+
+      <section class="doc-sec" id="diagrama" aria-labelledby="t-diagrama">
+        <h2 id="t-diagrama">Diagrama de la plataforma</h2>
+        <p class="sub">Cada pieza está donde está por una razón (ver <a href="#decisiones">decisiones</a>). Las líneas animadas muestran el camino normal de una petición.</p>
+        <figure class="diagrama-marco">
+          <svg viewBox="0 0 1000 570" role="img" aria-labelledby="dg-tit dg-desc">
+            <title id="dg-tit">Arquitectura de Centinela</title>
+            <desc id="dg-desc">Los usuarios (web, Telegram y app Android) llegan al gateway de Cloudflare. El gateway envía primero al nodo JE en Cloud Run y, si falla, al nodo JP en otra red. Ambos usan Cloud SQL con identidad IAM. Cloud Scheduler mantiene a JE con un latido firmado. La IA local corre en el Lenovo por Tailscale y Vertex AI es el respaldo. Los datos agregados van a BigQuery y Looker Studio.</desc>
+            <defs>
+              <marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" class="dg-flecha"/></marker>
+            </defs>
+
+            <!-- zonas -->
+            <rect class="dg-zona" x="10" y="30" width="170" height="330" rx="14"/>
+            <text class="dg-zona-txt" x="24" y="52">Usuarios</text>
+            <rect class="dg-zona cf" x="198" y="30" width="184" height="330" rx="14"/>
+            <text class="dg-zona-txt" x="212" y="52">Borde · Cloudflare</text>
+            <rect class="dg-zona gcp" x="400" y="16" width="590" height="349" rx="14"/>
+            <text class="dg-zona-txt" x="414" y="38">Google Cloud · us-east1</text>
+            <rect class="dg-zona jp" x="400" y="388" width="285" height="170" rx="14"/>
+            <text class="dg-zona-txt" x="414" y="410">VM de JP · otra red</text>
+            <rect class="dg-zona ia" x="705" y="388" width="285" height="170" rx="14"/>
+            <text class="dg-zona-txt" x="719" y="410">Lenovo · IA privada</text>
+
+            <!-- líneas -->
+            <path class="dg-linea flujo" d="M165 98 C 190 98, 190 170, 215 170" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M165 188 C 190 188, 190 196, 215 196" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M165 278 C 190 278, 190 224, 215 224" marker-end="url(#fl)"/>
+            <path class="dg-linea principal flujo" d="M365 170 C 392 170, 392 91, 420 91" marker-end="url(#fl)"/>
+            <path class="dg-linea respaldo" d="M365 226 C 392 226, 392 465, 420 465" marker-end="url(#fl)"/>
+            <path class="dg-linea principal" d="M595 80 H 640" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M615 425 V 108 H 640" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M507 165 V 127" marker-end="url(#fl)"/>
+            <path class="dg-linea respaldo" d="M595 114 C 618 114, 618 196, 640 196" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M790 91 H 825" marker-end="url(#fl)"/>
+            <path class="dg-linea" d="M900 127 V 165" marker-end="url(#fl)"/>
+            <path class="dg-linea privada" d="M420 100 H 410 V 374 H 782 V 425" marker-end="url(#fl)"/>
+            <path class="dg-linea privada" d="M540 425 V 374"/>
+
+            <!-- etiquetas de las líneas -->
+            <text class="dg-et" x="384" y="122" text-anchor="middle">1º</text>
+            <text class="dg-et" x="290" y="300" text-anchor="middle">si JE falla → JP</text>
+            <text class="dg-et" x="290" y="316" text-anchor="middle">en menos de 1 s</text>
+            <text class="dg-et" x="617" y="72" text-anchor="middle">IAM</text>
+            <text class="dg-et" x="606" y="300" text-anchor="middle" transform="rotate(-90 606 300)">Auth Proxy · IAM</text>
+            <text class="dg-et" x="545" y="150">OIDC</text>
+            <text class="dg-et" x="715" y="150" text-anchor="middle">si Ollama no responde</text>
+            <text class="dg-et" x="807" y="50" text-anchor="middle">diario</text>
+            <text class="dg-et" x="430" y="386">Tailscale · red privada</text>
+
+            <!-- usuarios -->
+            <rect class="dg-caja" x="25" y="70" width="140" height="56" rx="10"/><text class="dg-t" x="95" y="95" text-anchor="middle">Web / PWA</text><text class="dg-s" x="95" y="113" text-anchor="middle">consulta · reporte · chat</text>
+            <rect class="dg-caja" x="25" y="160" width="140" height="56" rx="10"/><text class="dg-t" x="95" y="185" text-anchor="middle">Telegram</text><text class="dg-s" x="95" y="203" text-anchor="middle">bot (n8n en el Lenovo)</text>
+            <rect class="dg-caja" x="25" y="250" width="140" height="56" rx="10"/><text class="dg-t" x="95" y="275" text-anchor="middle">App Android</text><text class="dg-s" x="95" y="293" text-anchor="middle">aviso al timbrar</text>
+
+            <!-- borde -->
+            <rect class="dg-caja borde" x="215" y="140" width="150" height="110" rx="12"/>
+            <text class="dg-t" x="290" y="168" text-anchor="middle">Gateway</text>
+            <text class="dg-s" x="290" y="188" text-anchor="middle">Worker · failover</text>
+            <text class="dg-s" x="290" y="204" text-anchor="middle">límites por IP · CSP</text>
+            <text class="dg-s" x="290" y="220" text-anchor="middle">web + panel /admin</text>
+
+            <!-- google cloud -->
+            <rect class="dg-caja prin" x="420" y="55" width="175" height="72" rx="10"/><text class="dg-t" x="507" y="85" text-anchor="middle">JE · Cloud Run</text><text class="dg-s" x="507" y="105" text-anchor="middle">API FastAPI · 0–1 inst.</text>
+            <rect class="dg-caja" x="640" y="55" width="150" height="72" rx="10"/><text class="dg-t" x="715" y="85" text-anchor="middle">Cloud SQL</text><text class="dg-s" x="715" y="105" text-anchor="middle">Postgres 17 · solo IAM</text>
+            <rect class="dg-caja" x="825" y="55" width="150" height="72" rx="10"/><text class="dg-t" x="900" y="85" text-anchor="middle">BigQuery</text><text class="dg-s" x="900" y="105" text-anchor="middle">analítica anónima</text>
+            <rect class="dg-caja" x="420" y="165" width="175" height="62" rx="10"/><text class="dg-t" x="507" y="191" text-anchor="middle">Cloud Scheduler</text><text class="dg-s" x="507" y="209" text-anchor="middle">latido firmado · 1 min</text>
+            <rect class="dg-caja" x="640" y="165" width="150" height="62" rx="10"/><text class="dg-t" x="715" y="191" text-anchor="middle">Vertex AI</text><text class="dg-s" x="715" y="209" text-anchor="middle">Gemini · con topes</text>
+            <rect class="dg-caja" x="825" y="165" width="150" height="62" rx="10"/><text class="dg-t" x="900" y="191" text-anchor="middle">Looker Studio</text><text class="dg-s" x="900" y="209" text-anchor="middle">tablero de tendencias</text>
+            <rect class="dg-caja" x="420" y="265" width="175" height="62" rx="10"/><text class="dg-t" x="507" y="291" text-anchor="middle">Secret Manager</text><text class="dg-s" x="507" y="309" text-anchor="middle">un permiso por secreto</text>
+            <rect class="dg-caja" x="640" y="265" width="335" height="62" rx="10"/><text class="dg-t" x="807" y="291" text-anchor="middle">IAM · cuentas de servicio</text><text class="dg-s" x="807" y="309" text-anchor="middle">una por función · privilegio mínimo</text>
+
+            <!-- JP y Lenovo -->
+            <rect class="dg-caja resp" x="420" y="425" width="240" height="80" rx="10"/>
+            <text class="dg-t" x="540" y="455" text-anchor="middle">JP · respaldo</text>
+            <text class="dg-s" x="540" y="475" text-anchor="middle">misma API + Cloud SQL Auth Proxy</text>
+            <text class="dg-s" x="540" y="491" text-anchor="middle">publicado con HTTPS sin abrir puertos</text>
+            <rect class="dg-caja" x="720" y="425" width="125" height="80" rx="10"/><text class="dg-t" x="782" y="460" text-anchor="middle">Ollama</text><text class="dg-s" x="782" y="478" text-anchor="middle">modelo centinela</text>
+            <rect class="dg-caja" x="860" y="425" width="115" height="80" rx="10"/><text class="dg-t" x="917" y="460" text-anchor="middle">n8n</text><text class="dg-s" x="917" y="478" text-anchor="middle">bot + avisos</text>
+          </svg>
+          <figcaption>Si el diagrama no cabe en tu pantalla, deslízalo hacia los lados.</figcaption>
+        </figure>
+        <ul class="leyenda" aria-label="Leyenda">
+          <li><i class="l-prin"></i>Camino principal</li>
+          <li><i class="l-resp"></i>Respaldo (solo si algo falla)</li>
+          <li><i class="l-priv"></i>Red privada Tailscale</li>
+          <li><i></i>Servicio interno</li>
+        </ul>
+      </section>
+
+      <section class="doc-sec" id="recorrido" aria-labelledby="t-recorrido">
+        <h2 id="t-recorrido">Recorrido de una consulta</h2>
+        <p class="sub">Qué pasa entre que alguien escribe un número y ve el resultado.</p>
+        <ol class="pasos">
+          <li><b>El usuario abre la web o le escribe al bot.</b><span>El gateway de Cloudflare sirve la página desde el borde más cercano y aplica los límites por IP.</span></li>
+          <li><b>La web pide la ficha del número.</b><span>El gateway la reenvía a JE con su secreto y la IP real del usuario; nada más que el gateway puede hablar con los nodos.</span></li>
+          <li><b>JE consulta la base de datos.</b><span>Cloud Run llega a Cloud SQL por un conector que exige identidad IAM: una contraseña robada sola no sirve.</span></li>
+          <li><b>Se calcula el riesgo.</b><span>Según cuántas personas distintas lo reportaron (1 → 30, 2 → 50, 3 → 65 = alto), prefijos de estafa conocidos y antigüedad de los reportes.</span></li>
+          <li><b>Si hay descripción, la IA la clasifica.</b><span>Primero el modelo privado del Lenovo; si no responde, Gemini en Vertex AI con topes; si tampoco, reglas.</span></li>
+          <li><b>Si JE no contesta en 6 s, contesta JP.</b><span>El gateway marca a JE como caído 30 s y manda todo a JP, que usa la misma base de datos: el usuario no lo nota.</span></li>
+        </ol>
+      </section>
+
+      <section class="doc-sec" id="fallos" aria-labelledby="t-fallos">
+        <h2 id="t-fallos">Tolerancia a fallos</h2>
+        <p class="sub">El sistema está diseñado para degradarse con gracia: cada pieza tiene un plan B automático.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Si falla…</th><th scope="col">Qué hace el sistema</th><th scope="col">Tiempo</th><th scope="col">¿Se pierden datos?</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">JE (Cloud Run)</th><td>El gateway lo marca caído 30 s y atiende JP; lo vuelve a probar en segundo plano</td><td class="num">&lt; 1 s</td><td><span class="chip ok">No</span></td></tr>
+              <tr><th scope="row">JP (respaldo)</th><td>JE sigue atendiendo; JP vuelve solo cuando se recupera</td><td class="num">0 s</td><td><span class="chip ok">No</span></td></tr>
+              <tr><th scope="row">Cloud SQL</th><td>Modo degradado: los reportes van a una bandeja local y las consultas salen de caché; se sincronizan en el siguiente latido</td><td class="num">inmediato</td><td><span class="chip ok">No</span></td></tr>
+              <tr><th scope="row">IA local (Lenovo)</th><td>Responde Gemini en Vertex AI, con topes por hora y por día</td><td class="num">inmediato</td><td><span class="chip neutro">No aplica</span></td></tr>
+              <tr><th scope="row">IA en la nube (o topes alcanzados)</th><td>El chat responde con reglas; los reportes se reclasifican después</td><td class="num">inmediato</td><td><span class="chip neutro">No aplica</span></td></tr>
+              <tr><th scope="row">Avalancha de peticiones</th><td>Cloudflare absorbe el volumen; límites por IP en el borde y en cada nodo (429)</td><td class="num">continuo</td><td><span class="chip ok">No</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="nota">Se demuestra en vivo: desde el panel se detiene JE y el sitio sigue respondiendo por JP; al reactivarlo, JE vuelve a atender en 30 segundos o menos.</p>
+      </section>
+
+      <section class="doc-sec" id="stack" aria-labelledby="t-stack">
+        <h2 id="t-stack">Tecnologías por capa</h2>
+        <p class="sub">Servicios administrados donde aportan seguridad y costo cero; equipos propios donde dan independencia y privacidad.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Capa</th><th scope="col">Tecnología</th><th scope="col">Por qué</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Borde</th><td>Cloudflare Workers + Cache API</td><td>Failover sin DNS ni balanceador pago; absorbe ataques de volumen</td></tr>
+              <tr><th scope="row">Cómputo principal</th><td>Cloud Run gen2 · Python 3.12 · FastAPI</td><td>Sin servidores que parchar, revisiones con rollback en segundos, nivel gratis</td></tr>
+              <tr><th scope="row">Respaldo</th><td>VM Linux propia · Tailscale Funnel</td><td>Falla de forma independiente a Google Cloud; HTTPS sin abrir puertos</td></tr>
+              <tr><th scope="row">Datos</th><td>Cloud SQL · PostgreSQL 17 + SQLite local</td><td>Acceso solo por identidad; modo degradado si la base falla</td></tr>
+              <tr><th scope="row">Tareas</th><td>Cloud Scheduler + tokens OIDC</td><td>Latido cada minuto sin contraseñas compartidas</td></tr>
+              <tr><th scope="row">IA</th><td>Ollama (modelo <code>centinela</code>) + Vertex AI Gemini Flash</td><td>Privada por defecto; nube solo de respaldo y con topes de gasto</td></tr>
+              <tr><th scope="row">Analítica</th><td>BigQuery + Looker Studio</td><td>Tendencias con datos agregados y anónimos; producción aislada</td></tr>
+              <tr><th scope="row">Automatización</th><td>n8n + Telegram Bot API</td><td>Bot y avisos diarios sin código a la medida</td></tr>
+              <tr><th scope="row">Identidad y secretos</th><td>IAM + Secret Manager</td><td>Una cuenta por función y un permiso por secreto</td></tr>
+              <tr><th scope="row">Clientes</th><td>Web PWA (HTML, CSS y JS sin framework) · app Android (Kotlin)</td><td>Rápida, instalable, funciona sin internet; aviso al entrar la llamada</td></tr>
+              <tr><th scope="row">Calidad</th><td>GitHub Actions: ruff, pytest, shellcheck, gitleaks, trivy</td><td>Ningún cambio entra a producción sin pasar pruebas y escaneos</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="decisiones" aria-labelledby="t-decisiones">
+        <h2 id="t-decisiones">Decisiones de arquitectura</h2>
+        <p class="sub">Registro de decisiones (ADR): el contexto, lo que se decidió y lo que cuesta. Toca cada una para verla completa.</p>
+        <div class="adrs">
+          <details open>
+            <summary><span class="id">ADR‑001</span>Gateway en el borde con failover activo‑pasivo</summary>
+            <dl><dt>Contexto</dt><dd>Dos nodos en redes distintas; hace falta un solo enlace y que la caída de uno no se note.</dd>
+              <dt>Decisión</dt><dd>Un Worker de Cloudflare es la única puerta: prueba JE y, si falla, JP. Cortacircuito de 30 s.</dd>
+              <dt>A favor</dt><dd>Failover en menos de 1 s sin DNS ni balanceador pago; absorbe tráfico malicioso.</dd>
+              <dt>En contra</dt><dd>Los límites por IP del borde se cuentan por centro de datos, no globalmente.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑002</span>Nodo principal en Cloud Run en vez de una VM</summary>
+            <dl><dt>Contexto</dt><dd>La VM exigía parches, SSH y una IP pública paga.</dd>
+              <dt>Decisión</dt><dd>Cloud Run gen2, 1 vCPU / 512 MiB, de 0 a 1 instancias, cobro por petición.</dd>
+              <dt>A favor</dt><dd>Costo casi cero, nada que administrar, rollback inmediato.</dd>
+              <dt>En contra</dt><dd>Arranque en frío (lo cubren el latido y el failover) y disco efímero.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑003</span>Cloud SQL con conector obligatorio</summary>
+            <dl><dt>Contexto</dt><dd>La base estaba en otro proveedor, con acceso por usuario y contraseña.</dd>
+              <dt>Decisión</dt><dd>PostgreSQL 17 sin redes autorizadas, SSL obligatorio y acceso solo por el conector con identidad IAM.</dd>
+              <dt>A favor</dt><dd>Una contraseña filtrada no basta; misma región que JE (~1 ms).</dd>
+              <dt>En contra</dt><dd>Es lo único que cobra en serio; sin alta disponibilidad propia (la da el clúster).</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑004</span>Respaldo heterogéneo en una máquina propia</summary>
+            <dl><dt>Contexto</dt><dd>Un respaldo en la misma nube cae con la misma nube.</dd>
+              <dt>Decisión</dt><dd>JP corre la misma API en otra red y otro proveedor, y llega a Cloud SQL por el Auth Proxy con su propia identidad.</dd>
+              <dt>A favor</dt><dd>Falla de forma independiente a Google Cloud.</dd>
+              <dt>En contra</dt><dd>Depende de que la máquina de JP esté encendida.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑005</span>IA local por red privada</summary>
+            <dl><dt>Contexto</dt><dd>La IA en la nube cobra por token y los reportes son sensibles.</dd>
+              <dt>Decisión</dt><dd>Modelo acotado <code>centinela</code> en Ollama dentro de un equipo propio, alcanzado por Tailscale.</dd>
+              <dt>A favor</dt><dd>Gratis y privado; si se apaga, nada se cae.</dd>
+              <dt>En contra</dt><dd>Disponibilidad atada a ese equipo (lo resuelve ADR‑013).</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑006</span>Tareas por Cloud Scheduler con OIDC</summary>
+            <dl><dt>Contexto</dt><dd>Cloud Run congela la CPU sin peticiones: los bucles de fondo no corren.</dd>
+              <dt>Decisión</dt><dd>Un latido cada minuto con un token firmado por Google que la API verifica (firma, audiencia y cuenta).</dd>
+              <dt>A favor</dt><dd>Sin contraseñas compartidas; mantiene caliente al nodo.</dd>
+              <dt>En contra</dt><dd>Usa uno de los trabajos gratuitos de Scheduler.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑007</span>Secret Manager con un permiso por secreto</summary>
+            <dl><dt>Decisión</dt><dd>Cada secreto es un recurso aparte y el nodo solo lee los suyos. Entre equipos se comparan huellas, nunca valores.</dd>
+              <dt>A favor</dt><dd>Privilegio mínimo y rotación individual.</dd>
+              <dt>En contra</dt><dd>Más pasos al rotar (automatizados en scripts).</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑008</span>Panel de administración en el borde</summary>
+            <dl><dt>Decisión</dt><dd>Login con PBKDF2, doble factor, sesión firmada atada al navegador y anti‑CSRF, todo en el gateway. En los nodos el panel no existe.</dd>
+              <dt>A favor</dt><dd>Nadie puede atacar el login entrando directo a un nodo; compatible con una CSP estricta.</dd>
+              <dt>En contra</dt><dd>El gateway necesita una credencial propia para pedir datos internos.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑009</span>Puerta única</summary>
+            <dl><dt>Decisión</dt><dd>Los nodos rechazan todo lo que no venga del gateway, salvo salud y tareas firmadas. Solo se cree la IP que reenvía el gateway.</dd>
+              <dt>A favor</dt><dd>Las URL públicas de los nodos dejan de ser un atajo; nadie puede hacerse pasar por muchas personas.</dd>
+              <dt>En contra</dt><dd>Rotar el secreto exige hacerlo a la vez en gateway, JE y JP.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑010</span>Modo degradado con base local</summary>
+            <dl><dt>Decisión</dt><dd>Si la base falla, los reportes esperan en una bandeja SQLite y las consultas salen de caché.</dd>
+              <dt>A favor</dt><dd>El usuario nunca ve un error por la base de datos.</dd>
+              <dt>En contra</dt><dd>En Cloud Run la bandeja vive mientras viva la instancia.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑011</span>Una sola instancia del nodo principal</summary>
+            <dl><dt>Decisión</dt><dd>El modo mantenimiento y los límites viven en memoria: con una instancia son coherentes.</dd>
+              <dt>A favor</dt><dd>Simple y barato.</dd>
+              <dt>En contra</dt><dd>Techo de ~40 peticiones simultáneas (ver <a href="#evolucion">escalamiento</a>).</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑012</span>Métricas de seguridad agregadas</summary>
+            <dl><dt>Decisión</dt><dd>Cada bloqueo suma en memoria por hora y tipo; el latido lo guarda. Nunca se guardan IP.</dd>
+              <dt>A favor</dt><dd>Un ataque no se convierte en miles de escrituras; privacidad.</dd>
+              <dt>En contra</dt><dd>Si la instancia muere, se pierde menos de un minuto de conteo.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑013</span>IA híbrida: local primero, nube de respaldo con topes</summary>
+            <dl><dt>Decisión</dt><dd>Ollama → Gemini en Vertex AI → reglas. Gemini solo por acción de una persona, con tope de 20 llamadas por hora y 100 por día, caché de 1 h y tiempo máximo de 20 s.</dd>
+              <dt>A favor</dt><dd>El chat sigue siendo útil aunque el equipo local se apague.</dd>
+              <dt>En contra</dt><dd>Costo variable, acotado por los topes; lo sensible se anonimiza antes de salir.</dd></dl>
+          </details>
+          <details>
+            <summary><span class="id">ADR‑014</span>Analítica en BigQuery con exportación diaria</summary>
+            <dl><dt>Decisión</dt><dd>Una vez al día JE calcula agregados y los carga en BigQuery; Looker Studio lee vistas, nunca la base de producción.</dd>
+              <dt>A favor</dt><dd>Costo cero, producción aislada, nada personal sale de la base.</dd>
+              <dt>En contra</dt><dd>Hasta un día de retraso (suficiente para tendencias).</dd></dl>
+          </details>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="costos" aria-labelledby="t-costos">
+        <h2 id="t-costos">Costos de operación</h2>
+        <p class="sub">Un sistema distribuido con failover real por menos de lo que cuesta un almuerzo a la semana.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-doc">
+            <thead><tr><th scope="col">Recurso</th><th scope="col">Tamaño</th><th scope="col" class="num">USD / mes</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Cloud SQL</th><td>Instancia mínima, disco de 10 GB, copias de 7 días</td><td class="num">9–11</td></tr>
+              <tr><th scope="row">Cloud Run</th><td>0–1 instancias, cobro por petición</td><td class="num">0</td></tr>
+              <tr><th scope="row">Cloud Scheduler</th><td>Latido + exportación diaria</td><td class="num">0</td></tr>
+              <tr><th scope="row">Secret Manager</th><td>~10 secretos</td><td class="num">≈ 0,60</td></tr>
+              <tr><th scope="row">Vertex AI (Gemini)</th><td>Solo de respaldo y con topes</td><td class="num">≈ 0,80 (máx. ≈ 20)</td></tr>
+              <tr><th scope="row">BigQuery + Looker Studio</th><td>Dentro del nivel gratuito</td><td class="num">0</td></tr>
+              <tr><th scope="row">Cloudflare, Tailscale, n8n, Telegram</th><td>Planes gratuitos o autohospedados</td><td class="num">0</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="2">Total de nube</td><td class="num">≈ 11–12</td></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-sec" id="evolucion" aria-labelledby="t-evolucion">
+        <h2 id="t-evolucion">Evolución y escalamiento</h2>
+        <p class="sub">Cómo llegamos aquí y qué cambia cuando haya clientes.</p>
+        <ol class="linea-tiempo">
+          <li><time>Inicio</time><b>Dos PC viejos en consola</b><span>Failover en el borde, base de datos compartida en la nube y modo degradado.</span></li>
+          <li><time>17 nov 2026</time><b>Nodo principal en una VM de Google Cloud</b><span>Firewall sin puertos abiertos al mundo y auditoría de seguridad completa.</span></li>
+          <li><time>18–20 nov 2026</time><b>Cloud Run, Cloud SQL e IAM</b><span>Servicios administrados, cuentas por función, latido firmado y puerta única.</span></li>
+          <li><time>25–26 nov 2026</time><b>IA híbrida y analítica</b><span>Gemini de respaldo con topes, exportación diaria a BigQuery y panel por roles.</span></li>
+          <li><time>Siguiente</time><b>Escalar con clientes reales</b><span>Llaves de API por empresa con cuota, estado compartido en Memorystore para varias instancias, réplica de lectura y alta disponibilidad de la base.</span></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+</main>
+
+<footer class="pie-doc">
+  <div>
+    <p><b>Centinela</b> · Antes de contestar, sabe quién te llama.</p>
+    <p>Hecho por JE, JP y JM · Ingeniería de Sistemas · Uniremington · 2026</p>
+  </div>
+  <nav aria-label="Producto"><h2>Producto</h2><ul><li><a href="/">Consultar un número</a></li><li><a href="/#reportar">Reportar una llamada</a></li><li><a href="/#comunidad">Comunidad</a></li><li><a href="/#app">App Android</a></li></ul></nav>
+  <nav aria-label="Plataforma"><h2>Plataforma</h2><ul><li><a href="/arquitectura">Arquitectura</a></li><li><a href="/seguridad">Seguridad</a></li><li><a href="/arquitectura#estado">Estado en vivo</a></li><li><a href="https://github.com/juan-student1/surprised-system">Código en GitHub</a></li></ul></nav>
+  <nav aria-label="Empresas"><h2>Empresas</h2><ul><li><a href="/empresas">Soluciones</a></li><li><a href="/empresas#planes">Planes</a></li><li><a href="/empresas#piloto">Piloto</a></li><li><a href="/#empresas">Hablar con ventas</a></li></ul></nav>
+</footer>
+
+<script src="/paginas.js"></script>
+</body>
+</html>
