@@ -115,4 +115,24 @@ Sobre `main` en `74c3076` (API v1.8.0, gateway con pestañas, IA híbrida, expor
 
 Nuevo desde la auditoría anterior y revisado: rutas `/api/interno/*` (secreto del gateway **y** token de control; 404 desde afuera), `/tareas/exportar` (mismo OIDC del latido), formulario de leads (trampa para bots, 3/hora, Ley 1581, aviso a Telegram sin datos personales), IA híbrida (topes, caché, timeout, anonimización hacia Gemini) y exportación a BigQuery (sin IPs, hashes, descripciones, leads ni números completos; verificado contra Postgres local).
 
-Siguen abiertos (sin cambio): H1/M1 en JP, B3 (token por URL), B5 (Rate Limiting de Cloudflare), C6 (ACL de Tailscale). Ver `roles/JP_SEGURIDAD.md` §2.
+Siguen abiertos (sin cambio): B3 (token por URL), B5 (Rate Limiting de Cloudflare), C6 (ACL de Tailscale). Ver `roles/JP_SEGURIDAD.md` §2.
+
+## Verificación final antes de la expo (2026‑11‑27, PC de mesa, `main` en `18991bf`)
+Lo que pide `18_EXPO.md` §4. Todo de solo lectura contra el código, y contra **nuestro propio** servicio en vivo.
+
+| Herramienta / prueba | Resultado | ¿Real o falso positivo? | Acción |
+|---|---|---|---|
+| `gitleaks git .` (todo el historial) | 0 secretos | — | — |
+| `auditar .` → gitleaks sobre la carpeta | 4 hallazgos, todos en `guia-google-cloud.txt` | **Falso positivo**: archivo local excluido de git (`.git/info/exclude`), nunca se subió | Ninguna |
+| `semgrep --config auto` | `exported_activity` (Android) | **Falso positivo**: es la actividad `MAIN/LAUNCHER`; con `exported="false"` la app no se podría abrir. El resumen de IA de `auditar` lo marcó "crítico" por error | Ninguna |
+| `semgrep --config auto` | `missing-integrity` × 4 (`index`, `arquitectura`, `seguridad`, `empresas`) | **Falso positivo**: es el favicon en `data:` (no es un recurso externo) | Ninguna |
+| `trivy fs --severity HIGH,CRITICAL .` | 0 vulnerabilidades, 0 secretos | — | — |
+| `trivy config` (en `auditar`) | Dockerfile sin `HEALTHCHECK` (bajo) | **No aplica**: Cloud Run usa sus propias sondas, no el `HEALTHCHECK` de Docker | Ninguna |
+| `pytest` | 122 / 122 | — | — |
+| `ruff check .` · `shellcheck -S warning` (26 scripts) | Sin avisos | — | — |
+| `ataques.sh` 413 cuerpo gigante · 403 saltarse el gateway (JE) · 404 rutas internas | Como se esperaba | **Real (defensas OK)** | — |
+| `ataques.sh` llamada sin token, inyección SQL y spam de leads | `429` en vez de `401` / `422` / `200×3` | **Falla del guion**: el flood iba primero y agotaba el límite por IP (que también es una defensa) | Flood movido al final |
+| `ataques.sh` fuerza bruta al panel | `403` × 6 | **Falla del guion**: sin `Sec-Fetch-Site` lo frena el anti‑CSRF antes de mirar la clave (defensa real, pero no prueba el bloqueo) | La prueba imita a un navegador |
+| Cabeceras en vivo | CSP, HSTS, XFO, nosniff, Referrer‑Policy | **Real (aviso menor)**: faltaban `Permissions-Policy` y `Cross-Origin-Opener-Policy` | Agregadas en el gateway y en `web/_headers` |
+| Lighthouse (escritorio y celular), Mozilla Observatory, SSL Labs, PWA en DevTools | Pendiente | — | Se corren en el navegador de Juan (Chrome headless no arranca en este equipo) |
+

@@ -693,6 +693,11 @@ function cors(resp) {
   r.headers.set("X-Frame-Options", "DENY");
   r.headers.set("Referrer-Policy", "same-origin");
   r.headers.set("Strict-Transport-Security", "max-age=31536000");
+  // Ninguna página usa cámara, micrófono, ubicación, pagos, USB ni sensores: quedan apagados.
+  // Pantalla completa solo para nuestro propio sitio (la usa la sala 3D).
+  r.headers.set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), fullscreen=(self)");
+  // Ninguna otra pestaña abierta desde aquí puede manipular esta ventana (window.opener).
+  r.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   r.headers.set("Content-Security-Policy",
     "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; " +
